@@ -1,23 +1,15 @@
 {
-<<<<<<< HEAD
-  "name": "clinics_crm",
+  "name": "clinics-crm-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
+    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-=======
-  "name": "clinics-crm-backend",
-  "version": "1.0.0",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
->>>>>>> 2c00a1cfe7f552ff503b61d744bb848577d8e92f
   "dependencies": {
     "bcrypt": "^6.0.0",
     "body-parser": "^2.2.0",

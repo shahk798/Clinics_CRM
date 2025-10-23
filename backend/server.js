@@ -3,9 +3,11 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const setupLogger = require('./logger');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const logger = setupLogger();
 
 // Middleware
 app.use(cors());
@@ -133,6 +135,12 @@ app.delete('/api/patients/:id', async (req, res) => {
     console.error(err);
     res.status(500).json({ message: 'Failed to delete patient' });
   }
+});
+
+// Welcome endpoint
+app.get('/api/welcome', (req, res) => {
+  logger.info(`Request received: ${req.method} ${req.path}`);
+  res.json({ message: 'Welcome to the Express API Service!' });
 });
 
 // Start server
