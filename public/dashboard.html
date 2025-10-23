@@ -3,36 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clinic Dashboard</title>
+  <title>Lumonex Agency - Dashboard</title>
   <link rel="stylesheet" href="style.css">
+  <!-- jsPDF and AutoTable -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
   <!-- Header -->
-  <header>
-    <h1>Clinic Dashboard</h1>
-    <button id="logoutBtn">Logout</button>
+  <header class="header">
+    <div>
+      <h1 class="agency-name">Lumonex Agency</h1>
+      <h3 class="clinic-name">Your Clinic Dashboard</h3>
+    </div>
+    <div class="header-right">
+      <button id="reportBtn" class="btn-primary">Generate Report</button>
+      <button id="logoutBtn" class="btn-danger">Logout</button>
+    </div>
   </header>
 
-  <!-- Stats Cards -->
-  <section class="stats">
-    <div class="card">Total Patients: <span id="totalPatients">0</span></div>
-    <div class="card">Completed: <span id="completedAppointments">0</span></div>
-    <div class="card">Pending: <span id="pendingAppointments">0</span></div>
-    <div class="card">Cancelled: <span id="cancelledAppointments">0</span></div>
-    <div class="card">Revenue: ₹<span id="totalRevenue">0</span></div>
-  </section>
+  <!-- Dashboard -->
+  <div class="dashboard">
+    <!-- Summary Cards -->
+    <div class="summary">
+      <div class="summary-card">Total Patients: <span id="totalPatients">0</span></div>
+      <div class="summary-card">Completed: <span id="completedAppointments">0</span></div>
+      <div class="summary-card">Pending: <span id="pendingAppointments">0</span></div>
+      <div class="summary-card">Cancelled: <span id="cancelledAppointments">0</span></div>
+      <div class="summary-card">Total Revenue: ₹<span id="totalRevenue">0</span></div>
+    </div>
 
-  <!-- Controls -->
-  <section class="controls">
-    <button id="addPatientBtn">Add Patient</button>
-    <input type="text" id="searchInput" placeholder="Search by name, phone, or email">
-    <button id="reportBtn">Generate PDF</button>
-  </section>
+    <!-- Controls -->
+    <div class="controls">
+      <button id="addPatientBtn" class="btn-primary">Add Patient</button>
+      <input type="text" id="searchInput" placeholder="Search patients...">
+    </div>
 
-  <!-- Patient Table -->
-  <section class="table-section">
+    <!-- Patient Table -->
     <table id="patientTable">
       <thead>
         <tr>
@@ -47,23 +54,20 @@
           <th>Actions</th>
         </tr>
       </thead>
-      <tbody>
-        <!-- Patients will be rendered here by script.js -->
-      </tbody>
+      <tbody></tbody>
     </table>
-  </section>
+  </div>
 
-  <!-- Add/Edit Patient Modal -->
+  <!-- Patient Modal -->
   <div id="patientModal" class="modal">
     <div class="modal-content">
-      <span id="closeModal" class="close">&times;</span>
-      <h2 id="modalTitle">Add Patient</h2>
+      <h3 id="modalTitle">Add Patient</h3>
       <form id="patientForm">
-        <input type="text" id="pName" placeholder="Name" required>
+        <input type="text" id="pName" placeholder="Full Name" required>
         <input type="text" id="pPhone" placeholder="Phone" required>
-        <input type="email" id="pEmail" placeholder="Email">
+        <input type="email" id="pEmail" placeholder="Email" required>
         <input type="text" id="pService" placeholder="Service" required>
-        <input type="number" id="pPrice" placeholder="Price" required>
+        <input type="number" id="pPrice" placeholder="Price (₹)" required>
         <input type="date" id="pDate" required>
         <input type="time" id="pTime" required>
         <select id="pStatus" required>
@@ -71,19 +75,24 @@
           <option value="Complete">Complete</option>
           <option value="Cancelled">Cancelled</option>
         </select>
-        <button type="submit">Save</button>
+        <div class="modal-actions">
+          <button type="submit" id="savePatientBtn" class="btn-primary">Save</button>
+          <button type="button" id="closeModal" class="btn-secondary">Cancel</button>
+        </div>
       </form>
     </div>
   </div>
 
-  <!-- View Patient Modal -->
+  <!-- Profile Modal -->
   <div id="profileModal" class="modal">
     <div class="modal-content">
-      <span id="closeProfile" class="close">&times;</span>
+      <h3>Patient Profile</h3>
       <div id="profileDetails"></div>
+      <button id="closeProfile" class="btn-secondary">Close</button>
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <!-- Script -->
+  <script src="script.js" type="text/javascript"></script>
 </body>
 </html>
