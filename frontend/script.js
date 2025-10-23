@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", async () => {
   // ------------------ CONFIG ------------------ //
-  const BASE_URL = "https://clinics-crm.onrender.com"; // ✅ your backend on Render
+  const BASE_URL = "https://clinics-crm.onrender.com"; // ✅ backend URL
 
   // ------------------ LOGIN LOGIC ------------------ //
   const loginForm = document.getElementById("loginForm");
@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("resetPassword").addEventListener("click", () => {
       alert("Password reset link will be sent to your registered email.");
     });
-    return; // Stop dashboard code if on login page
+    return;
   }
 
   // ------------------ DASHBOARD LOGIC ------------------ //
