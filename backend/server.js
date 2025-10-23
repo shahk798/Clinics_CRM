@@ -143,6 +143,14 @@ app.get('/api/welcome', (req, res) => {
   res.json({ message: 'Welcome to the Express API Service!' });
 });
 
+// Env endpoint for frontend
+app.get('/api/env', (req, res) => {
+  res.json({
+    CLINIC_ID: process.env.CLINIC_ID,
+    USERNAME: process.env.USERNAME
+  });
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
