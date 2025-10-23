@@ -1,91 +1,217 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lumonex Agency - Dashboard</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-</head>
-<body>
-  <header class="header">
-    <div>
-      <h1 class="agency-name">Lumonex Agency</h1>
-      <h3 class="clinic-name">Your Clinic Dashboard</h3>
-    </div>
-    <div class="header-right">
-      <button id="reportBtn" class="btn-primary">Generate Report</button>
-      <button id="logoutBtn" class="btn-danger">Logout</button>
-    </div>
-  </header>
+document.addEventListener("DOMContentLoaded", async () => {
+  // ------------------ DASHBOARD LOGIC ------------------ //
+  if (!localStorage.getItem("loggedIn")) {
+    window.location.href = "login.html";
+    return;
+  }
 
-  <div class="dashboard">
-    <div class="summary">
-      <div class="summary-card">Total Patients: <span id="totalPatients">0</span></div>
-      <div class="summary-card">Completed: <span id="completedAppointments">0</span></div>
-      <div class="summary-card">Pending: <span id="pendingAppointments">0</span></div>
-      <div class="summary-card">Cancelled: <span id="cancelledAppointments">0</span></div>
-      <div class="summary-card">Total Revenue: ₹<span id="totalRevenue">0</span></div>
-    </div>
+  const logoutBtn = document.getElementById("logoutBtn");
+  const addPatientBtn = document.getElementById("addPatientBtn");
+  const modal = document.getElementById("patientModal");
+  const form = document.getElementById("patientForm");
+  const tableBody = document.querySelector("#patientTable tbody");
+  const closeModal = document.getElementById("closeModal");
+  const searchInput = document.getElementById("searchInput");
+  const profileModal = document.getElementById("profileModal");
+  const profileDetails = document.getElementById("profileDetails");
+  const closeProfile = document.getElementById("closeProfile");
 
-    <div class="controls">
-      <button id="addPatientBtn" class="btn-primary">Add Patient</button>
-      <input type="text" id="searchInput" placeholder="Search patients...">
-    </div>
+  const totalPatientsCard = document.getElementById("totalPatients");
+  const completedAppointmentsCard = document.getElementById("completedAppointments");
+  const pendingAppointmentsCard = document.getElementById("pendingAppointments");
+  const cancelledAppointmentsCard = document.getElementById("cancelledAppointments");
+  const totalRevenueCard = document.getElementById("totalRevenue");
 
-    <table id="patientTable">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Phone</th>
-          <th>Email</th>
-          <th>Service</th>
-          <th>Price</th>
-          <th>Date</th>
-          <th>Time</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+  const clinicId = localStorage.getItem("clinicId");
+  let patients = [];
+  let editIndex = null;
 
-  <!-- Patient Modal -->
-  <div id="patientModal" class="modal">
-    <div class="modal-content">
-      <h3 id="modalTitle">Add Patient</h3>
-      <form id="patientForm">
-        <input type="text" id="pName" placeholder="Full Name" required>
-        <input type="text" id="pPhone" placeholder="Phone" required>
-        <input type="email" id="pEmail" placeholder="Email" required>
-        <input type="text" id="pService" placeholder="Service" required>
-        <input type="number" id="pPrice" placeholder="Price (₹)" required>
-        <input type="date" id="pDate" required>
-        <input type="time" id="pTime" placeholder="Time" required>
-        <select id="pStatus" required>
-          <option value="Pending">Pending</option>
-          <option value="Complete">Complete</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
-        <div class="modal-actions">
-          <button type="submit" id="savePatientBtn" class="btn-primary">Save</button>
-          <button type="button" id="closeModal" class="btn-secondary">Cancel</button>
-        </div>
-      </form>
-    </div>
-  </div>
+  // --- Patient form inputs ---
+  const pName = document.getElementById("pName");
+  const pPhone = document.getElementById("pPhone");
+  const pEmail = document.getElementById("pEmail");
+  const pService = document.getElementById("pService");
+  const pPrice = document.getElementById("pPrice");
+  const pDate = document.getElementById("pDate");
+  const pTime = document.getElementById("pTime");
+  const pStatus = document.getElementById("pStatus");
 
-  <!-- Profile Modal -->
-  <div id="profileModal" class="modal">
-    <div class="modal-content">
-      <h3>Patient Profile</h3>
-      <div id="profileDetails"></div>
-      <button id="closeProfile" class="btn-secondary">Close</button>
-    </div>
-  </div>
+  const BASE_URL = "https://clinics-crm.onrender.com"; // your backend URL on Render
 
-  <script src="dashboard.js"></script>
-</body>
-</html>
+  // ------------------ FETCH PATIENTS ------------------ //
+  async function fetchPatients() {
+    try {
+      const res = await fetch(`${BASE_URL}/api/patients?clinicId=${clinicId}`);
+      patients = await res.json();
+      renderPatients();
+    } catch (err) {
+      console.error("Error fetching patients", err);
+    }
+  }
+
+  // ------------------ RENDER PATIENTS ------------------ //
+  function renderPatients(filteredData = patients) {
+    tableBody.innerHTML = "";
+
+    const totalPatients = filteredData.length;
+    const completed = filteredData.filter(p => p.status === "Complete").length;
+    const pending = filteredData.filter(p => p.status === "Pending").length;
+    const cancelled = filteredData.filter(p => p.status === "Cancelled").length;
+    const revenue = filteredData.reduce((sum, p) => p.status === "Complete" ? sum + Number(p.price) : sum, 0);
+
+    totalPatientsCard.innerText = totalPatients;
+    completedAppointmentsCard.innerText = completed;
+    pendingAppointmentsCard.innerText = pending;
+    cancelledAppointmentsCard.innerText = cancelled;
+    totalRevenueCard.innerText = revenue;
+
+    filteredData.forEach((p, index) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${p.name}</td>
+        <td>${p.phone}</td>
+        <td>${p.email}</td>
+        <td>${p.service}</td>
+        <td>₹${p.price}</td>
+        <td>${p.date}</td>
+        <td>${p.time}</td>
+        <td class="status ${p.status}">${p.status}</td>
+        <td>
+          <div class="action-buttons">
+            <button class="viewBtn" data-index="${index}">View</button>
+            <button class="editBtn" data-index="${index}">Edit</button>
+            <button class="deleteBtn" data-index="${index}">Delete</button>
+          </div>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+  }
+
+  await fetchPatients();
+
+  // ------------------ MODALS ------------------ //
+  addPatientBtn.addEventListener("click", () => {
+    modal.style.display = "flex";
+    form.reset();
+    editIndex = null;
+    document.getElementById("modalTitle").innerText = "Add Patient";
+  });
+
+  closeModal.addEventListener("click", () => modal.style.display = "none");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const patient = {
+      name: pName.value,
+      phone: pPhone.value,
+      email: pEmail.value,
+      service: pService.value,
+      price: pPrice.value,
+      date: pDate.value,
+      time: pTime.value,
+      status: pStatus.value,
+      clinicId: clinicId
+    };
+
+    try {
+      if (editIndex !== null) {
+        await fetch(`${BASE_URL}/api/patients/${patients[editIndex]._id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patient)
+        });
+      } else {
+        await fetch(`${BASE_URL}/api/patients`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patient)
+        });
+      }
+      modal.style.display = "none";
+      await fetchPatients();
+    } catch (err) {
+      console.error("Error saving patient", err);
+    }
+  });
+
+  tableBody.addEventListener("click", (e) => {
+    const index = e.target.dataset.index;
+
+    if (e.target.classList.contains("editBtn")) {
+      editIndex = index;
+      const p = patients[index];
+      modal.style.display = "flex";
+      document.getElementById("modalTitle").innerText = "Edit Patient";
+
+      pName.value = p.name;
+      pPhone.value = p.phone;
+      pEmail.value = p.email;
+      pService.value = p.service;
+      pPrice.value = p.price;
+      pDate.value = p.date;
+      pTime.value = p.time;
+      pStatus.value = p.status;
+    }
+
+    if (e.target.classList.contains("deleteBtn")) {
+      if (confirm("Delete this patient?")) {
+        fetch(`${BASE_URL}/api/patients/${patients[index]._id}`, { method: "DELETE" })
+          .then(() => fetchPatients());
+      }
+    }
+
+    if (e.target.classList.contains("viewBtn")) {
+      const p = patients[index];
+      profileDetails.innerHTML = `
+        <p><strong>Name:</strong> ${p.name}</p>
+        <p><strong>Phone:</strong> ${p.phone}</p>
+        <p><strong>Email:</strong> ${p.email}</p>
+        <p><strong>Service:</strong> ${p.service}</p>
+        <p><strong>Price:</strong> ₹${p.price}</p>
+        <p><strong>Date:</strong> ${p.date}</p>
+        <p><strong>Time:</strong> ${p.time}</p>
+        <p><strong>Status:</strong> ${p.status}</p>
+      `;
+      profileModal.style.display = "flex";
+    }
+  });
+
+  closeProfile.addEventListener("click", () => profileModal.style.display = "none");
+
+  // ------------------ SEARCH ------------------ //
+  searchInput.addEventListener("input", () => {
+    const value = searchInput.value.toLowerCase();
+    const filtered = patients.filter(
+      p => p.name.toLowerCase().includes(value) ||
+           p.phone.includes(value) ||
+           p.email.toLowerCase().includes(value)
+    );
+    renderPatients(filtered);
+  });
+
+  // ------------------ LOGOUT ------------------ //
+  logoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("loggedIn");
+    localStorage.removeItem("clinicId");
+    localStorage.removeItem("username");
+    window.location.href = "login.html";
+  });
+
+  // ------------------ GENERATE PDF ------------------ //
+  document.getElementById("reportBtn").addEventListener("click", () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const tableData = patients.map(p => [
+      p.name, p.phone, p.email, p.service, `₹${p.price}`, p.date, p.time, p.status
+    ]);
+
+    doc.autoTable({
+      head: [['Name', 'Phone', 'Email', 'Service', 'Price', 'Date', 'Time', 'Status']],
+      body: tableData
+    });
+
+    doc.save(`clinic_${clinicId}_report.pdf`);
+  });
+});

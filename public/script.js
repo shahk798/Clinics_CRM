@@ -6,9 +6,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   const passwordInput = document.getElementById("password");
   const errorMessage = document.getElementById("error-message");
 
+  const BASE_URL = "https://clinics-crm.onrender.com"; // backend URL for Render
+
   // Pre-fill clinic ID and username if API provides it
   try {
-    const res = await fetch("http://localhost:5000/api/env");
+    const res = await fetch(`${BASE_URL}/api/env`);
     if (res.ok) {
       const data = await res.json();
       if (data.CLINIC_ID) clinicIdInput.value = data.CLINIC_ID;
@@ -26,12 +28,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       const password = passwordInput.value.trim();
 
       try {
-        const res = await fetch("http://localhost:5000/api/auth/login", {
+        const res = await fetch(`${BASE_URL}/api/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ clinicId, username, password }),
         });
-
         const data = await res.json();
 
         if (res.ok) {
@@ -51,7 +52,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("resetPassword").addEventListener("click", () => {
       alert("Password reset link will be sent to your registered email.");
     });
-    return; // Stop executing dashboard code if on login page
+    return; // stop execution if on login page
   }
 
   // ------------------ DASHBOARD LOGIC ------------------ //
@@ -78,14 +79,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   const totalRevenueCard = document.getElementById("totalRevenue");
 
   const clinicId = localStorage.getItem("clinicId");
-
   let patients = [];
   let editIndex = null;
 
-  // Fetch patients from backend
+  // --- Patient form inputs ---
+  const pName = document.getElementById("pName");
+  const pPhone = document.getElementById("pPhone");
+  const pEmail = document.getElementById("pEmail");
+  const pService = document.getElementById("pService");
+  const pPrice = document.getElementById("pPrice");
+  const pDate = document.getElementById("pDate");
+  const pTime = document.getElementById("pTime");
+  const pStatus = document.getElementById("pStatus");
+
+  // ------------------ FETCH PATIENTS ------------------ //
   async function fetchPatients() {
     try {
-      const res = await fetch(`http://localhost:5000/api/patients?clinicId=${clinicId}`);
+      const res = await fetch(`${BASE_URL}/api/patients?clinicId=${clinicId}`);
       patients = await res.json();
       renderPatients();
     } catch (err) {
@@ -93,15 +103,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Render patients table and summary
+  // ------------------ RENDER PATIENTS ------------------ //
   function renderPatients(filteredData = patients) {
     tableBody.innerHTML = "";
 
-    let totalPatients = filteredData.length;
-    let completed = filteredData.filter(p => p.status === "Complete").length;
-    let pending = filteredData.filter(p => p.status === "Pending").length;
-    let cancelled = filteredData.filter(p => p.status === "Cancelled").length;
-    let revenue = filteredData.reduce((sum, p) => p.status === "Complete" ? sum + Number(p.price) : sum, 0);
+    const totalPatients = filteredData.length;
+    const completed = filteredData.filter(p => p.status === "Complete").length;
+    const pending = filteredData.filter(p => p.status === "Pending").length;
+    const cancelled = filteredData.filter(p => p.status === "Cancelled").length;
+    const revenue = filteredData.reduce((sum, p) => p.status === "Complete" ? sum + Number(p.price) : sum, 0);
 
     totalPatientsCard.innerText = totalPatients;
     completedAppointmentsCard.innerText = completed;
@@ -134,7 +144,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await fetchPatients();
 
-  // Add patient modal
+  // ------------------ MODALS ------------------ //
   addPatientBtn.addEventListener("click", () => {
     modal.style.display = "flex";
     form.reset();
@@ -142,9 +152,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("modalTitle").innerText = "Add Patient";
   });
 
-  closeModal.addEventListener("click", () => (modal.style.display = "none"));
+  closeModal.addEventListener("click", () => modal.style.display = "none");
 
-  // Save patient
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const patient = {
@@ -154,20 +163,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       service: pService.value,
       price: pPrice.value,
       date: pDate.value,
-      time: pDay.value,
+      time: pTime.value,
       status: pStatus.value,
       clinicId: clinicId
     };
 
     try {
       if (editIndex !== null) {
-        await fetch(`http://localhost:5000/api/patients/${patients[editIndex]._id}`, {
+        await fetch(`${BASE_URL}/api/patients/${patients[editIndex]._id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(patient)
         });
       } else {
-        await fetch(`http://localhost:5000/api/patients`, {
+        await fetch(`${BASE_URL}/api/patients`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(patient)
@@ -180,7 +189,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Edit / Delete / View
+  // ------------------ EDIT / DELETE / VIEW ------------------ //
   tableBody.addEventListener("click", (e) => {
     const index = e.target.dataset.index;
 
@@ -189,19 +198,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       const p = patients[index];
       modal.style.display = "flex";
       document.getElementById("modalTitle").innerText = "Edit Patient";
+
       pName.value = p.name;
       pPhone.value = p.phone;
       pEmail.value = p.email;
       pService.value = p.service;
       pPrice.value = p.price;
       pDate.value = p.date;
-      pDay.value = p.time;
+      pTime.value = p.time;
       pStatus.value = p.status;
     }
 
     if (e.target.classList.contains("deleteBtn")) {
       if (confirm("Delete this patient?")) {
-        fetch(`http://localhost:5000/api/patients/${patients[index]._id}`, { method: "DELETE" })
+        fetch(`${BASE_URL}/api/patients/${patients[index]._id}`, { method: "DELETE" })
           .then(() => fetchPatients());
       }
     }
@@ -222,9 +232,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  closeProfile.addEventListener("click", () => (profileModal.style.display = "none"));
+  closeProfile.addEventListener("click", () => profileModal.style.display = "none");
 
-  // Search
+  // ------------------ SEARCH ------------------ //
   searchInput.addEventListener("input", () => {
     const value = searchInput.value.toLowerCase();
     const filtered = patients.filter(
@@ -235,14 +245,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderPatients(filtered);
   });
 
-  // Logout
+  // ------------------ LOGOUT ------------------ //
   logoutBtn.addEventListener("click", () => {
     localStorage.removeItem("loggedIn");
     localStorage.removeItem("clinicId");
+    localStorage.removeItem("username");
     window.location.href = "login.html";
   });
 
-  // Generate PDF report
+  // ------------------ GENERATE PDF ------------------ //
   document.getElementById("reportBtn").addEventListener("click", () => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();

@@ -1,7 +1,4 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  // ------------------ CONFIG ------------------ //
-  const BASE_URL = "https://clinics-crm.onrender.com"; // ✅ your backend on Render
-
   // ------------------ LOGIN LOGIC ------------------ //
   const loginForm = document.getElementById("loginForm");
   const clinicIdInput = document.getElementById("clinicId");
@@ -9,7 +6,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const passwordInput = document.getElementById("password");
   const errorMessage = document.getElementById("error-message");
 
-  // Pre-fill clinic ID and username from backend
+  const BASE_URL = "https://clinics-crm.onrender.com"; // backend URL for Render
+
+  // Pre-fill clinic ID and username if API provides it
   try {
     const res = await fetch(`${BASE_URL}/api/env`);
     if (res.ok) {
@@ -34,7 +33,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ clinicId, username, password }),
         });
-
         const data = await res.json();
 
         if (res.ok) {
@@ -51,14 +49,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
 
-    const resetBtn = document.getElementById("resetPassword");
-    if (resetBtn) {
-      resetBtn.addEventListener("click", () => {
-        alert("Password reset link will be sent to your registered email.");
-      });
-    }
-
-    return; // Stop dashboard code if on login page
+    document.getElementById("resetPassword").addEventListener("click", () => {
+      alert("Password reset link will be sent to your registered email.");
+    });
+    return; // stop execution if on login page
   }
 
   // ------------------ DASHBOARD LOGIC ------------------ //
@@ -88,7 +82,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   let patients = [];
   let editIndex = null;
 
-  // Fetch patients from backend
+  // --- Patient form inputs ---
+  const pName = document.getElementById("pName");
+  const pPhone = document.getElementById("pPhone");
+  const pEmail = document.getElementById("pEmail");
+  const pService = document.getElementById("pService");
+  const pPrice = document.getElementById("pPrice");
+  const pDate = document.getElementById("pDate");
+  const pTime = document.getElementById("pTime");
+  const pStatus = document.getElementById("pStatus");
+
+  // ------------------ FETCH PATIENTS ------------------ //
   async function fetchPatients() {
     try {
       const res = await fetch(`${BASE_URL}/api/patients?clinicId=${clinicId}`);
@@ -99,7 +103,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Render patients table and summary
+  // ------------------ RENDER PATIENTS ------------------ //
   function renderPatients(filteredData = patients) {
     tableBody.innerHTML = "";
 
@@ -140,7 +144,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await fetchPatients();
 
-  // Add patient modal
+  // ------------------ MODALS ------------------ //
   addPatientBtn.addEventListener("click", () => {
     modal.style.display = "flex";
     form.reset();
@@ -148,9 +152,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("modalTitle").innerText = "Add Patient";
   });
 
-  closeModal.addEventListener("click", () => (modal.style.display = "none"));
+  closeModal.addEventListener("click", () => modal.style.display = "none");
 
-  // Save patient
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const patient = {
@@ -186,7 +189,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Edit / Delete / View
+  // ------------------ EDIT / DELETE / VIEW ------------------ //
   tableBody.addEventListener("click", (e) => {
     const index = e.target.dataset.index;
 
@@ -195,6 +198,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const p = patients[index];
       modal.style.display = "flex";
       document.getElementById("modalTitle").innerText = "Edit Patient";
+
       pName.value = p.name;
       pPhone.value = p.phone;
       pEmail.value = p.email;
@@ -228,9 +232,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  closeProfile.addEventListener("click", () => (profileModal.style.display = "none"));
+  closeProfile.addEventListener("click", () => profileModal.style.display = "none");
 
-  // Search
+  // ------------------ SEARCH ------------------ //
   searchInput.addEventListener("input", () => {
     const value = searchInput.value.toLowerCase();
     const filtered = patients.filter(
@@ -241,7 +245,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderPatients(filtered);
   });
 
-  // Logout
+  // ------------------ LOGOUT ------------------ //
   logoutBtn.addEventListener("click", () => {
     localStorage.removeItem("loggedIn");
     localStorage.removeItem("clinicId");
@@ -249,7 +253,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = "login.html";
   });
 
-  // Generate PDF report
+  // ------------------ GENERATE PDF ------------------ //
   document.getElementById("reportBtn").addEventListener("click", () => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
