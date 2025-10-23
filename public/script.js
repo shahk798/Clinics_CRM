@@ -1,0 +1,261 @@
+document.addEventListener("DOMContentLoaded", async () => {
+  // ------------------ LOGIN LOGIC ------------------ //
+  const loginForm = document.getElementById("loginForm");
+  const clinicIdInput = document.getElementById("clinicId");
+  const usernameInput = document.getElementById("username");
+  const passwordInput = document.getElementById("password");
+  const errorMessage = document.getElementById("error-message");
+
+  // Pre-fill clinic ID and username if API provides it
+  try {
+    const res = await fetch("http://localhost:5000/api/env");
+    if (res.ok) {
+      const data = await res.json();
+      if (data.CLINIC_ID) clinicIdInput.value = data.CLINIC_ID;
+      if (data.USERNAME) usernameInput.value = data.USERNAME;
+    }
+  } catch (err) {
+    console.error("Failed to fetch clinic info:", err);
+  }
+
+  if (loginForm) {
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const clinicId = clinicIdInput.value.trim();
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      try {
+        const res = await fetch("http://localhost:5000/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ clinicId, username, password }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          localStorage.setItem("loggedIn", "true");
+          localStorage.setItem("clinicId", data.clinicId);
+          localStorage.setItem("username", username);
+          window.location.href = "dashboard.html";
+        } else {
+          errorMessage.innerText = data.message || "Login failed";
+        }
+      } catch (err) {
+        errorMessage.innerText = "Server connection error";
+        console.error(err);
+      }
+    });
+
+    document.getElementById("resetPassword").addEventListener("click", () => {
+      alert("Password reset link will be sent to your registered email.");
+    });
+    return; // Stop executing dashboard code if on login page
+  }
+
+  // ------------------ DASHBOARD LOGIC ------------------ //
+  if (!localStorage.getItem("loggedIn")) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  const logoutBtn = document.getElementById("logoutBtn");
+  const addPatientBtn = document.getElementById("addPatientBtn");
+  const modal = document.getElementById("patientModal");
+  const form = document.getElementById("patientForm");
+  const tableBody = document.querySelector("#patientTable tbody");
+  const closeModal = document.getElementById("closeModal");
+  const searchInput = document.getElementById("searchInput");
+  const profileModal = document.getElementById("profileModal");
+  const profileDetails = document.getElementById("profileDetails");
+  const closeProfile = document.getElementById("closeProfile");
+
+  const totalPatientsCard = document.getElementById("totalPatients");
+  const completedAppointmentsCard = document.getElementById("completedAppointments");
+  const pendingAppointmentsCard = document.getElementById("pendingAppointments");
+  const cancelledAppointmentsCard = document.getElementById("cancelledAppointments");
+  const totalRevenueCard = document.getElementById("totalRevenue");
+
+  const clinicId = localStorage.getItem("clinicId");
+
+  let patients = [];
+  let editIndex = null;
+
+  // Fetch patients from backend
+  async function fetchPatients() {
+    try {
+      const res = await fetch(`http://localhost:5000/api/patients?clinicId=${clinicId}`);
+      patients = await res.json();
+      renderPatients();
+    } catch (err) {
+      console.error("Error fetching patients", err);
+    }
+  }
+
+  // Render patients table and summary
+  function renderPatients(filteredData = patients) {
+    tableBody.innerHTML = "";
+
+    let totalPatients = filteredData.length;
+    let completed = filteredData.filter(p => p.status === "Complete").length;
+    let pending = filteredData.filter(p => p.status === "Pending").length;
+    let cancelled = filteredData.filter(p => p.status === "Cancelled").length;
+    let revenue = filteredData.reduce((sum, p) => p.status === "Complete" ? sum + Number(p.price) : sum, 0);
+
+    totalPatientsCard.innerText = totalPatients;
+    completedAppointmentsCard.innerText = completed;
+    pendingAppointmentsCard.innerText = pending;
+    cancelledAppointmentsCard.innerText = cancelled;
+    totalRevenueCard.innerText = revenue;
+
+    filteredData.forEach((p, index) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${p.name}</td>
+        <td>${p.phone}</td>
+        <td>${p.email}</td>
+        <td>${p.service}</td>
+        <td>₹${p.price}</td>
+        <td>${p.date}</td>
+        <td>${p.time}</td>
+        <td class="status ${p.status}">${p.status}</td>
+        <td>
+          <div class="action-buttons">
+            <button class="viewBtn" data-index="${index}">View</button>
+            <button class="editBtn" data-index="${index}">Edit</button>
+            <button class="deleteBtn" data-index="${index}">Delete</button>
+          </div>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+  }
+
+  await fetchPatients();
+
+  // Add patient modal
+  addPatientBtn.addEventListener("click", () => {
+    modal.style.display = "flex";
+    form.reset();
+    editIndex = null;
+    document.getElementById("modalTitle").innerText = "Add Patient";
+  });
+
+  closeModal.addEventListener("click", () => (modal.style.display = "none"));
+
+  // Save patient
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const patient = {
+      name: pName.value,
+      phone: pPhone.value,
+      email: pEmail.value,
+      service: pService.value,
+      price: pPrice.value,
+      date: pDate.value,
+      time: pDay.value,
+      status: pStatus.value,
+      clinicId: clinicId
+    };
+
+    try {
+      if (editIndex !== null) {
+        await fetch(`http://localhost:5000/api/patients/${patients[editIndex]._id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patient)
+        });
+      } else {
+        await fetch(`http://localhost:5000/api/patients`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patient)
+        });
+      }
+      modal.style.display = "none";
+      await fetchPatients();
+    } catch (err) {
+      console.error("Error saving patient", err);
+    }
+  });
+
+  // Edit / Delete / View
+  tableBody.addEventListener("click", (e) => {
+    const index = e.target.dataset.index;
+
+    if (e.target.classList.contains("editBtn")) {
+      editIndex = index;
+      const p = patients[index];
+      modal.style.display = "flex";
+      document.getElementById("modalTitle").innerText = "Edit Patient";
+      pName.value = p.name;
+      pPhone.value = p.phone;
+      pEmail.value = p.email;
+      pService.value = p.service;
+      pPrice.value = p.price;
+      pDate.value = p.date;
+      pDay.value = p.time;
+      pStatus.value = p.status;
+    }
+
+    if (e.target.classList.contains("deleteBtn")) {
+      if (confirm("Delete this patient?")) {
+        fetch(`http://localhost:5000/api/patients/${patients[index]._id}`, { method: "DELETE" })
+          .then(() => fetchPatients());
+      }
+    }
+
+    if (e.target.classList.contains("viewBtn")) {
+      const p = patients[index];
+      profileDetails.innerHTML = `
+        <p><strong>Name:</strong> ${p.name}</p>
+        <p><strong>Phone:</strong> ${p.phone}</p>
+        <p><strong>Email:</strong> ${p.email}</p>
+        <p><strong>Service:</strong> ${p.service}</p>
+        <p><strong>Price:</strong> ₹${p.price}</p>
+        <p><strong>Date:</strong> ${p.date}</p>
+        <p><strong>Time:</strong> ${p.time}</p>
+        <p><strong>Status:</strong> ${p.status}</p>
+      `;
+      profileModal.style.display = "flex";
+    }
+  });
+
+  closeProfile.addEventListener("click", () => (profileModal.style.display = "none"));
+
+  // Search
+  searchInput.addEventListener("input", () => {
+    const value = searchInput.value.toLowerCase();
+    const filtered = patients.filter(
+      p => p.name.toLowerCase().includes(value) ||
+           p.phone.includes(value) ||
+           p.email.toLowerCase().includes(value)
+    );
+    renderPatients(filtered);
+  });
+
+  // Logout
+  logoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("loggedIn");
+    localStorage.removeItem("clinicId");
+    window.location.href = "login.html";
+  });
+
+  // Generate PDF report
+  document.getElementById("reportBtn").addEventListener("click", () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const tableData = patients.map(p => [
+      p.name, p.phone, p.email, p.service, `₹${p.price}`, p.date, p.time, p.status
+    ]);
+
+    doc.autoTable({
+      head: [['Name', 'Phone', 'Email', 'Service', 'Price', 'Date', 'Time', 'Status']],
+      body: tableData
+    });
+
+    doc.save(`clinic_${clinicId}_report.pdf`);
+  });
+});
