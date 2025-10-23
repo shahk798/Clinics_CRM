@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", async () => {
   // ------------------ CONFIG ------------------ //
-  const BASE_URL = "https://clinics-crm.onrender.com"; // ✅ backend URL
+  const BASE_URL = "https://clinics-crm.onrender.com"; // ✅ your backend on Render
 
   // ------------------ LOGIN LOGIC ------------------ //
   const loginForm = document.getElementById("loginForm");
@@ -51,10 +51,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
 
-    document.getElementById("resetPassword").addEventListener("click", () => {
-      alert("Password reset link will be sent to your registered email.");
-    });
-    return;
+    const resetBtn = document.getElementById("resetPassword");
+    if (resetBtn) {
+      resetBtn.addEventListener("click", () => {
+        alert("Password reset link will be sent to your registered email.");
+      });
+    }
+
+    return; // Stop dashboard code if on login page
   }
 
   // ------------------ DASHBOARD LOGIC ------------------ //
@@ -150,14 +154,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const patient = {
-      name: document.getElementById("pName").value,
-      phone: document.getElementById("pPhone").value,
-      email: document.getElementById("pEmail").value,
-      service: document.getElementById("pService").value,
-      price: document.getElementById("pPrice").value,
-      date: document.getElementById("pDate").value,
-      time: document.getElementById("pDay").value,
-      status: document.getElementById("pStatus").value,
+      name: pName.value,
+      phone: pPhone.value,
+      email: pEmail.value,
+      service: pService.value,
+      price: pPrice.value,
+      date: pDate.value,
+      time: pTime.value,
+      status: pStatus.value,
       clinicId: clinicId
     };
 
@@ -191,14 +195,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       const p = patients[index];
       modal.style.display = "flex";
       document.getElementById("modalTitle").innerText = "Edit Patient";
-      document.getElementById("pName").value = p.name;
-      document.getElementById("pPhone").value = p.phone;
-      document.getElementById("pEmail").value = p.email;
-      document.getElementById("pService").value = p.service;
-      document.getElementById("pPrice").value = p.price;
-      document.getElementById("pDate").value = p.date;
-      document.getElementById("pDay").value = p.time;
-      document.getElementById("pStatus").value = p.status;
+      pName.value = p.name;
+      pPhone.value = p.phone;
+      pEmail.value = p.email;
+      pService.value = p.service;
+      pPrice.value = p.price;
+      pDate.value = p.date;
+      pTime.value = p.time;
+      pStatus.value = p.status;
     }
 
     if (e.target.classList.contains("deleteBtn")) {
