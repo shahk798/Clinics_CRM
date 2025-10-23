@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const passwordInput = document.getElementById("password");
   const errorMessage = document.getElementById("error-message");
 
-  const BASE_URL = "https://clinics-crm.onrender.com"; // backend URL for Render
+  const BASE_URL = "https://clinics-crm.onrender.com"; // backend URL on Render
 
   // Pre-fill clinic ID and username if API provides it
   try {
@@ -52,6 +52,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("resetPassword").addEventListener("click", () => {
       alert("Password reset link will be sent to your registered email.");
     });
+
     return; // stop execution if on login page
   }
 
@@ -80,7 +81,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const clinicId = localStorage.getItem("clinicId");
   let patients = [];
-  let editIndex = null;
+  let editId = null; // store patient _id for editing
 
   // --- Patient form inputs ---
   const pName = document.getElementById("pName");
@@ -119,7 +120,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     cancelledAppointmentsCard.innerText = cancelled;
     totalRevenueCard.innerText = revenue;
 
-    filteredData.forEach((p, index) => {
+    filteredData.forEach(p => {
       const row = document.createElement("tr");
       row.innerHTML = `
         <td>${p.name}</td>
@@ -132,9 +133,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         <td class="status ${p.status}">${p.status}</td>
         <td>
           <div class="action-buttons">
-            <button class="viewBtn" data-index="${index}">View</button>
-            <button class="editBtn" data-index="${index}">Edit</button>
-            <button class="deleteBtn" data-index="${index}">Delete</button>
+            <button class="viewBtn" data-id="${p._id}">View</button>
+            <button class="editBtn" data-id="${p._id}">Edit</button>
+            <button class="deleteBtn" data-id="${p._id}">Delete</button>
           </div>
         </td>
       `;
@@ -148,7 +149,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   addPatientBtn.addEventListener("click", () => {
     modal.style.display = "flex";
     form.reset();
-    editIndex = null;
+    editId = null;
     document.getElementById("modalTitle").innerText = "Add Patient";
   });
 
@@ -169,8 +170,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     try {
-      if (editIndex !== null) {
-        await fetch(`${BASE_URL}/api/patients/${patients[editIndex]._id}`, {
+      if (editId) {
+        await fetch(`${BASE_URL}/api/patients/${editId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(patient)
@@ -191,42 +192,43 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ------------------ EDIT / DELETE / VIEW ------------------ //
   tableBody.addEventListener("click", (e) => {
-    const index = e.target.dataset.index;
+    const id = e.target.dataset.id;
+    if (!id) return;
+
+    const patient = patients.find(p => p._id === id);
 
     if (e.target.classList.contains("editBtn")) {
-      editIndex = index;
-      const p = patients[index];
+      editId = id;
       modal.style.display = "flex";
       document.getElementById("modalTitle").innerText = "Edit Patient";
 
-      pName.value = p.name;
-      pPhone.value = p.phone;
-      pEmail.value = p.email;
-      pService.value = p.service;
-      pPrice.value = p.price;
-      pDate.value = p.date;
-      pTime.value = p.time;
-      pStatus.value = p.status;
+      pName.value = patient.name;
+      pPhone.value = patient.phone;
+      pEmail.value = patient.email;
+      pService.value = patient.service;
+      pPrice.value = patient.price;
+      pDate.value = patient.date;
+      pTime.value = patient.time;
+      pStatus.value = patient.status;
     }
 
     if (e.target.classList.contains("deleteBtn")) {
       if (confirm("Delete this patient?")) {
-        fetch(`${BASE_URL}/api/patients/${patients[index]._id}`, { method: "DELETE" })
+        fetch(`${BASE_URL}/api/patients/${id}`, { method: "DELETE" })
           .then(() => fetchPatients());
       }
     }
 
     if (e.target.classList.contains("viewBtn")) {
-      const p = patients[index];
       profileDetails.innerHTML = `
-        <p><strong>Name:</strong> ${p.name}</p>
-        <p><strong>Phone:</strong> ${p.phone}</p>
-        <p><strong>Email:</strong> ${p.email}</p>
-        <p><strong>Service:</strong> ${p.service}</p>
-        <p><strong>Price:</strong> ₹${p.price}</p>
-        <p><strong>Date:</strong> ${p.date}</p>
-        <p><strong>Time:</strong> ${p.time}</p>
-        <p><strong>Status:</strong> ${p.status}</p>
+        <p><strong>Name:</strong> ${patient.name}</p>
+        <p><strong>Phone:</strong> ${patient.phone}</p>
+        <p><strong>Email:</strong> ${patient.email}</p>
+        <p><strong>Service:</strong> ${patient.service}</p>
+        <p><strong>Price:</strong> ₹${patient.price}</p>
+        <p><strong>Date:</strong> ${patient.date}</p>
+        <p><strong>Time:</strong> ${patient.time}</p>
+        <p><strong>Status:</strong> ${patient.status}</p>
       `;
       profileModal.style.display = "flex";
     }
