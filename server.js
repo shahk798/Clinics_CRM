@@ -204,11 +204,31 @@ app.get('/api/patients', async (req, res) => {
 // Add patient
 app.post('/api/patients', async (req, res) => {
   try {
+    console.log('Received patient data:', req.body);
+    
+    // Save to Patient collection
     const patient = new Patient(req.body);
     await patient.save();
+    
+    // Also save to Appointment collection
+    const appointmentData = {
+      clinicId: req.body.clinicId,
+      name: req.body.name,
+      phone: req.body.phone,
+      service: req.body.service,
+      date: req.body.date,
+      time: req.body.time,
+      status: req.body.status || 'Pending'
+    };
+    
+    console.log('Saving to appointments:', appointmentData);
+    const appointment = new Appointment(appointmentData);
+    await appointment.save();
+    
+    console.log('Saved to both collections successfully');
     res.json(patient);
   } catch (err) {
-    console.error(err);
+    console.error('Error saving patient/appointment:', err);
     res.status(500).json({ message: 'Failed to add patient' });
   }
 });
@@ -216,10 +236,32 @@ app.post('/api/patients', async (req, res) => {
 // Update patient
 app.put('/api/patients/:id', async (req, res) => {
   try {
+    const patient = await Patient.findById(req.params.id);
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+
+    // Update in Patient collection
     const updated = await Patient.findByIdAndUpdate(req.params.id, req.body, { new: true });
+
+    // Also update in Appointment collection if exists (match by phone number)
+    await Appointment.updateMany(
+      { phone: patient.phone },
+      {
+        $set: {
+          name: req.body.name,
+          service: req.body.service,
+          date: req.body.date,
+          time: req.body.time,
+          status: req.body.status
+        }
+      }
+    );
+
+    console.log('Updated patient and related appointments');
     res.json(updated);
   } catch (err) {
-    console.error(err);
+    console.error('Error updating patient:', err);
     res.status(500).json({ message: 'Failed to update patient' });
   }
 });
@@ -227,10 +269,21 @@ app.put('/api/patients/:id', async (req, res) => {
 // Delete patient
 app.delete('/api/patients/:id', async (req, res) => {
   try {
+    const patient = await Patient.findById(req.params.id);
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+
+    // Delete from Patient collection
     await Patient.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Deleted' });
+
+    // Also delete from Appointment collection if exists
+    await Appointment.deleteMany({ phone: patient.phone });
+
+    console.log('Deleted patient and related appointments');
+    res.json({ message: 'Deleted from both collections' });
   } catch (err) {
-    console.error(err);
+    console.error('Error deleting patient:', err);
     res.status(500).json({ message: 'Failed to delete patient' });
   }
 });

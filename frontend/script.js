@@ -91,13 +91,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const payload = {
       clinicId,
       name: document.getElementById('pName').value.trim(),
-      phone: document.getElementById('pPhone').value.trim(),
+      phone: document.getElementById('pPhone').value.trim().replace(/\D/g, ''), // Clean phone number
       email: document.getElementById('pEmail').value.trim(),
       service: document.getElementById('pService').value.trim(),
       price: Number(document.getElementById('pPrice').value) || 0,
       date: document.getElementById('pDate').value,
       time: document.getElementById('pTime').value,
-      status: document.getElementById('pStatus').value
+      status: document.getElementById('pStatus').value,
+      source: 'dashboard' // Mark the source of this entry
     };
 
     try {
