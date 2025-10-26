@@ -120,11 +120,17 @@ app.get('/api/patients', async (req, res) => {
     console.log('Fetching appointments for clinicId:', clinicId);
     if (!clinicId) return res.status(400).json({ message: 'Clinic ID required' });
 
-    // Get appointments only (we're not using patients collection anymore)
+    // First get all appointments to debug
+    const allAppointments = await Appointment.find({}).lean();
+    console.log('All appointments in DB:', allAppointments);
+
+    // Now get filtered appointments
     const appointments = await Appointment.find({
       $or: [
         { clinic_name: clinicId },
-        { clinic_name: { $exists: false } }
+        { clinic_name: { $exists: false } },
+        { clinic_name: null },
+        { clinic_name: '' }
       ]
     }).lean();
 
@@ -133,17 +139,17 @@ app.get('/api/patients', async (req, res) => {
       console.log('Sample appointment:', appointments[0]);
     }
 
-    // Convert appointments to frontend format
+    // Keep original field names from appointments collection
     const formattedAppointments = appointments.map(a => ({
       _id: a._id,
-      clinicId: a.clinic_name || clinicId,
-      name: a.patient_name || '',
+      clinic_name: a.clinic_name || clinicId,
+      patient_name: a.patient_name || '',
       phone: a.phone || '',
       email: a.email || '',
       service: a.service || '',
       price: a.price || 0,
-      date: a.appointment_date || '',
-      time: a.appointment_time || '',
+      appointment_date: a.appointment_date || '',
+      appointment_time: a.appointment_time || '',
       status: a.status || 'Pending',
       source: a.source || 'whatsapp'
     }));
@@ -169,15 +175,18 @@ app.post('/api/patients', async (req, res) => {
     const patient = new Patient(req.body);
     await patient.save();
     
-    // Also save to Appointment collection with WhatsApp bot field names
+    // Save to Appointment collection with consistent field names
     const appointmentData = {
-      clinic_name: req.body.clinicId,
-      patient_name: req.body.name,
+      clinic_name: req.body.clinic_name,
+      patient_name: req.body.patient_name,
       phone: req.body.phone,
+      email: req.body.email,
       service: req.body.service,
-      appointment_date: req.body.date,
-      appointment_time: req.body.time,
-      status: req.body.status || 'Pending'
+      price: req.body.price,
+      appointment_date: req.body.appointment_date,
+      appointment_time: req.body.appointment_time,
+      status: req.body.status || 'Pending',
+      source: req.body.source || 'dashboard'
     };
     
     console.log('Saving to appointments:', appointmentData);
@@ -200,17 +209,18 @@ app.put('/api/patients/:id', async (req, res) => {
       return res.status(404).json({ message: 'Appointment not found' });
     }
 
-    // Update appointment with correct field names
+    // Update appointment with consistent field names
     const updateData = {
-      clinic_name: req.body.clinicId,
-      patient_name: req.body.name,
+      clinic_name: req.body.clinic_name,
+      patient_name: req.body.patient_name,
       phone: req.body.phone,
       email: req.body.email,
       service: req.body.service,
       price: req.body.price,
-      appointment_date: req.body.date,
-      appointment_time: req.body.time,
-      status: req.body.status
+      appointment_date: req.body.appointment_date,
+      appointment_time: req.body.appointment_time,
+      status: req.body.status,
+      source: req.body.source || 'dashboard'
     };
 
     const updated = await Appointment.findByIdAndUpdate(
@@ -249,14 +259,28 @@ app.delete('/api/patients/:id', async (req, res) => {
 // Debug endpoint to check appointments collection
 app.get('/api/debug/appointments', async (req, res) => {
   try {
-    const appointments = await Appointment.find({});
+    // List all collections first
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    console.log('Available collections:', collections.map(c => c.name));
+    
+    // Get all appointments
+    const appointments = await Appointment.find({}).lean();
     console.log('All appointments in DB:', appointments);
+    
+    // Get schema info
+    const schemaInfo = Object.keys(Appointment.schema.paths).map(path => ({
+      field: path,
+      type: Appointment.schema.paths[path].instance
+    }));
+    
     res.json({
+      collections: collections.map(c => c.name),
+      schema: schemaInfo,
       count: appointments.length,
       appointments: appointments
     });
   } catch (err) {
-    console.error('Error fetching appointments:', err);
+    console.error('Error in debug endpoint:', err);
     res.status(500).json({ error: err.message });
   }
 });

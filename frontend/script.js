@@ -25,37 +25,69 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch patients
   async function fetchPatients() {
     try {
-      console.log('Fetching patients for clinicId:', clinicId);
+      console.log('Fetching appointments for clinicId:', clinicId);
+      console.log('API URL:', `${apiBase}/api/patients?clinicId=${encodeURIComponent(clinicId)}`);
+      
+      // First try the debug endpoint to see all appointments
+      const debugRes = await fetch(`${apiBase}/api/debug/appointments`);
+      const debugData = await debugRes.json();
+      console.log('Debug - All appointments in DB:', debugData);
+
+      // Now fetch filtered appointments for this clinic
       const res = await fetch(`${apiBase}/api/patients?clinicId=${encodeURIComponent(clinicId)}`);
       if (!res.ok) {
         const error = await res.text();
         console.error('Server error:', error);
-        throw new Error('Failed to load patients');
+        throw new Error('Failed to load appointments');
       }
-      patients = await res.json();
-      console.log('Received patients/appointments:', patients);
+      
+      const data = await res.json();
+      console.log('Received appointments:', data);
+      
+      if (!Array.isArray(data)) {
+        console.error('Expected array of appointments but got:', typeof data);
+        throw new Error('Invalid data format received');
+      }
+      
+      patients = data;
+      console.log('Processing appointments:', patients.length);
+      if (patients.length > 0) {
+        console.log('Sample appointment:', patients[0]);
+      }
+      
       renderPatients(patients);
     } catch (err) {
       console.error('Error in fetchPatients:', err);
-      alert('Error loading patients. Check console for details.');
+      patientTableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: red;">Error loading appointments: ${err.message}</td></tr>`;
+      alert('Error loading appointments. Check browser console for details.');
     }
   }
 
   function renderPatients(list) {
     patientTableBody.innerHTML = '';
     let revenue = 0;
+    let completed = 0;
+    let pending = 0;
+    let cancelled = 0;
+
     list.forEach(p => {
       revenue += Number(p.price || 0);
+      
+      // Count by status
+      if (p.status === 'Complete') completed++;
+      else if (p.status === 'Pending') pending++;
+      else if (p.status === 'Cancelled') cancelled++;
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${escapeHtml(p.patient_name)}</td>
-        <td>${escapeHtml(p.phone)}</td>
-        <td>${escapeHtml(p.email)}</td>
-        <td>${escapeHtml(p.service)}</td>
+        <td>${escapeHtml(p.patient_name || '')}</td>
+        <td>${escapeHtml(p.phone || '')}</td>
+        <td>${escapeHtml(p.email || '')}</td>
+        <td>${escapeHtml(p.service || '')}</td>
         <td>₹${p.price || 0}</td>
         <td>${p.appointment_date || ''}</td>
         <td>${p.appointment_time || ''}</td>
-        <td>${p.status || ''}</td>
+        <td>${p.status || 'Pending'}</td>
         <td>
           <button class="btn-small" data-action="view" data-id="${p._id}">View</button>
           <button class="btn-small" data-action="edit" data-id="${p._id}">Edit</button>
@@ -64,7 +96,12 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       patientTableBody.appendChild(tr);
     });
+
+    // Update summary cards
     totalPatientsEl.innerText = list.length;
+    document.getElementById('completedAppointments').innerText = completed;
+    document.getElementById('pendingAppointments').innerText = pending;
+    document.getElementById('cancelledAppointments').innerText = cancelled;
     totalRevenueEl.innerText = revenue;
   }
 
@@ -100,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
       status: document.getElementById('pStatus').value,
       source: 'dashboard'
     };
+    console.log('Submitting appointment data:', payload);
 
     try {
       if (editingId) {
@@ -171,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const columns = ['Name','Phone','Email','Service','Price','Date','Time','Status'];
-    const rows = patients.map(p => [p.name, p.phone, p.email, p.service, p.price, p.date, p.time, p.status]);
+    const rows = patients.map(p => [p.patient_name, p.phone, p.email, p.service, p.price, p.appointment_date, p.appointment_time, p.status]);
     doc.text('Patients Report', 14, 16);
     doc.autoTable({ head: [columns], body: rows, startY: 20 });
     doc.save(`patients_report_${clinicId}.pdf`);
