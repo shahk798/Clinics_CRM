@@ -176,18 +176,19 @@ app.get('/api/patients', async (req, res) => {
       source: 'patient'
     }));
     
-    // Add appointments, always add them as they're from WhatsApp
+    // Add appointments
     appointments.forEach(a => {
+      console.log('Processing appointment:', a);
       const appointmentData = {
-        clinicId: clinicId,
-        name: a.name,
-        phone: a.phone,
+        clinicId: a.clinic_name || clinicId,
+        name: a.patient_name || '',
+        phone: a.phone || '',
         email: a.email || '',
-        service: a.service || a.treatment || '',  // Check both fields
+        service: a.service || '',
         price: a.price || 0,
-        date: a.date || a.appointmentDate || '',  // Check both fields
-        time: a.time || a.appointmentTime || '',  // Check both fields
-        status: a.status || 'Pending',
+        date: a.appointment_date || '',
+        time: a.appointment_time || '',
+        status: 'Pending',
         source: 'appointment'
       };
       // Always add WhatsApp appointments
@@ -214,14 +215,14 @@ app.post('/api/patients', async (req, res) => {
     const patient = new Patient(req.body);
     await patient.save();
     
-    // Also save to Appointment collection
+    // Also save to Appointment collection with WhatsApp bot field names
     const appointmentData = {
-      clinicId: req.body.clinicId,
-      name: req.body.name,
+      clinic_name: req.body.clinicId,
+      patient_name: req.body.name,
       phone: req.body.phone,
       service: req.body.service,
-      date: req.body.date,
-      time: req.body.time,
+      appointment_date: req.body.date,
+      appointment_time: req.body.time,
       status: req.body.status || 'Pending'
     };
     
