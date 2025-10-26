@@ -51,6 +51,14 @@ if (!mongoUri) {
     const collections = await mongoose.connection.db.listCollections().toArray();
     console.log('Available collections:', collections.map(c => c.name));
     
+    // Check appointment collection exists
+    const hasAppointments = collections.some(c => c.name === 'appointments');
+    console.log('Found appointments collection:', hasAppointments);
+    
+    // Get the actual collection name used by the model
+    const Appointment = require('./models/Appointment');
+    console.log('Appointment model collection name:', Appointment.collection.collectionName);
+    
     // Count documents in appointments collection
     const appointmentsCount = await Appointment.countDocuments();
     console.log(`Found ${appointmentsCount} documents in appointments collection`);
@@ -68,6 +76,8 @@ if (!mongoUri) {
 
 // Import models
 const Appointment = require('./models/Appointment');
+console.log('Loaded Appointment model with collection:', Appointment.collection.collectionName);
+
 const userSchema = new mongoose.Schema({
   clinicId: { type: String, required: true },
   username: { type: String, required: true },
@@ -263,9 +273,23 @@ app.get('/api/debug/appointments', async (req, res) => {
     const collections = await mongoose.connection.db.listCollections().toArray();
     console.log('Available collections:', collections.map(c => c.name));
     
-    // Get all appointments
+    // Get model info
+    const modelInfo = {
+      modelName: Appointment.modelName,
+      collectionName: Appointment.collection.collectionName,
+      database: Appointment.db.name,
+      schemaFields: Object.keys(Appointment.schema.paths)
+    };
+    console.log('Appointment model info:', modelInfo);
+    
+    // Try direct MongoDB query first
+    const db = mongoose.connection.db;
+    const directResults = await db.collection('appointments').find({}).toArray();
+    console.log('Direct MongoDB query results:', directResults.length);
+    
+    // Get all appointments through Mongoose
     const appointments = await Appointment.find({}).lean();
-    console.log('All appointments in DB:', appointments);
+    console.log('Mongoose query results:', appointments.length);
     
     // Get schema info
     const schemaInfo = Object.keys(Appointment.schema.paths).map(path => ({
@@ -274,9 +298,11 @@ app.get('/api/debug/appointments', async (req, res) => {
     }));
     
     res.json({
+      modelInfo,
       collections: collections.map(c => c.name),
       schema: schemaInfo,
-      count: appointments.length,
+      directCount: directResults.length,
+      mongooseCount: appointments.length,
       appointments: appointments
     });
   } catch (err) {
