@@ -23,15 +23,29 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/login.html'));
 });
 
+// Expose a small clinic config endpoint used by the frontend
+app.get('/api/clinic-config', (req, res) => {
+  return res.json({ clinicId: process.env.CLINIC_ID || '' });
+});
+
 
 
 // MongoDB connection
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log("✅ MongoDB Connected"))
-.catch(err => console.error("❌ MongoDB Connection Error:", err));
+const mongoUri = process.env.MONGO_URI;
+if (!mongoUri) {
+  console.warn('⚠️  MONGO_URI is not set. Database features will be disabled. To enable, set MONGO_URI in your .env (e.g. mongodb://localhost:27017/clinics_db)');
+} else {
+  mongoose.connect(mongoUri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  })
+  .then(async () => {
+    console.log("✅ MongoDB Connected");
+    // Auto-create clinic from .env if it doesn't exist (only after DB connect)
+    await createClinic();
+  })
+  .catch(err => console.error("❌ MongoDB Connection Error:", err));
+}
 
 // Schemas
 const patientSchema = new mongoose.Schema({
@@ -55,21 +69,24 @@ const userSchema = new mongoose.Schema({
 const Patient = mongoose.model('Patient', patientSchema);
 const User = mongoose.model('User', userSchema);
 
-// Auto-create clinic from .env if it doesn't exist
+// Auto-create clinic from .env if it doesn't exist (defined here but only called after DB connect)
 async function createClinic() {
   const { CLINIC_ID, USERNAME, PASSWORD } = process.env;
   if (!CLINIC_ID || !USERNAME || !PASSWORD) return;
 
-  const existing = await User.findOne({ clinicId: CLINIC_ID });
-  if (!existing) {
-    const clinic = new User({ clinicId: CLINIC_ID, username: USERNAME, password: PASSWORD });
-    await clinic.save();
-    console.log(`✅ Clinic created: ${CLINIC_ID}`);
-  } else {
-    console.log(`ℹ️ Clinic already exists: ${CLINIC_ID}`);
+  try {
+    const existing = await User.findOne({ clinicId: CLINIC_ID });
+    if (!existing) {
+      const clinic = new User({ clinicId: CLINIC_ID, username: USERNAME, password: PASSWORD });
+      await clinic.save();
+      console.log(`✅ Clinic created: ${CLINIC_ID}`);
+    } else {
+      console.log(`ℹ️ Clinic already exists: ${CLINIC_ID}`);
+    }
+  } catch (err) {
+    console.error('❌ Error creating clinic during initialization:', err.message || err);
   }
 }
-createClinic();
 
 // Routes
 

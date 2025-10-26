@@ -21,7 +21,7 @@
 
   <script>
     // Fetch default clinic ID from backend
-    fetch("http://localhost:5000/api/clinic-config")
+    fetch("https://clinics-crm.onrender.com/api/clinic-config")
       .then(res => res.json())
       .then(data => {
         document.getElementById("clinicId").value = data.clinicId || "";
@@ -37,7 +37,7 @@
       const errorMessage = document.getElementById("error-message");
 
       try {
-        const res = await fetch("http://localhost:5000/api/auth/login", {
+        const res = await fetch("https://clinics-crm.onrender.com/api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ clinicId, username, password }),
