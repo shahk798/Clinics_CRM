@@ -125,14 +125,18 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/patients', async (req, res) => {
   try {
     const { clinicId } = req.query;
+    console.log('Fetching patients for clinicId:', clinicId);
     if (!clinicId) return res.status(400).json({ message: 'Clinic ID required' });
 
     // Get both patients and appointments
-    const Appointment = mongoose.model('Appointment');
     const [patients, appointments] = await Promise.all([
       Patient.find({ clinicId }),
-      Appointment.find({ clinicId })
+      Appointment.find({})  // Get all appointments first to debug
     ]);
+
+    console.log('Found patients:', patients.length);
+    console.log('Found appointments:', appointments.length);
+    console.log('Sample appointment:', appointments[0]);
 
     // Combine both results, avoiding duplicates by phone number
     const phoneMap = new Map();
@@ -140,11 +144,12 @@ app.get('/api/patients', async (req, res) => {
     // Add patients first
     patients.forEach(p => phoneMap.set(p.phone, p));
     
-    // Add appointments, overwriting patients if same phone
+    // Add appointments
     appointments.forEach(a => {
-      if (!phoneMap.has(a.phone)) {
+      // Check if this appointment matches our clinicId
+      if (a.clinicId === clinicId || !a.clinicId) {
         phoneMap.set(a.phone, {
-          clinicId: a.clinicId,
+          clinicId: clinicId,
           name: a.name,
           phone: a.phone,
           service: a.service,
@@ -157,6 +162,7 @@ app.get('/api/patients', async (req, res) => {
 
     // Convert map back to array
     const combined = Array.from(phoneMap.values());
+    console.log('Total combined records:', combined.length);
     res.json(combined);
   } catch (err) {
     console.error('Error fetching patients/appointments:', err);

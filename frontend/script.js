@@ -25,13 +25,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch patients
   async function fetchPatients() {
     try {
+      console.log('Fetching patients for clinicId:', clinicId);
       const res = await fetch(`${apiBase}/api/patients?clinicId=${encodeURIComponent(clinicId)}`);
-      if (!res.ok) throw new Error('Failed to load patients');
+      if (!res.ok) {
+        const error = await res.text();
+        console.error('Server error:', error);
+        throw new Error('Failed to load patients');
+      }
       patients = await res.json();
+      console.log('Received patients/appointments:', patients);
       renderPatients(patients);
     } catch (err) {
-      console.error(err);
-      alert('Error loading patients');
+      console.error('Error in fetchPatients:', err);
+      alert('Error loading patients. Check console for details.');
     }
   }
 
