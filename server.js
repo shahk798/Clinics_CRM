@@ -66,42 +66,15 @@ if (!mongoUri) {
   .catch(err => console.error("❌ MongoDB Connection Error:", err));
 }
 
-// Schemas
-const appointmentSchema = new mongoose.Schema({
-  clinicId: { type: String, required: false }, // Make optional since WhatsApp bot might not set it
-  name: String,
-  phone: String,
-  service: String,
-  date: String,
-  time: String,
-  status: { type: String, default: 'Pending' }
-}, { 
-  collection: 'appointments',
-  timestamps: true,
-  strict: false // Allow additional fields from WhatsApp bot
-});
-
-const patientSchema = new mongoose.Schema({
-  clinicId: { type: String, required: true },
-  name: String,
-  phone: String,
-  email: String,
-  service: String,
-  price: Number,
-  date: String,
-  time: String,
-  status: String
-});
-
+// Import models
+const Appointment = require('./models/Appointment');
 const userSchema = new mongoose.Schema({
   clinicId: { type: String, required: true },
   username: { type: String, required: true },
   password: { type: String, required: true }
 });
 
-const Patient = mongoose.model('Patient', patientSchema);
 const User = mongoose.model('User', userSchema);
-const Appointment = mongoose.model('Appointment', appointmentSchema);
 
 // Auto-create clinic from .env if it doesn't exist (defined here but only called after DB connect)
 async function createClinic() {
