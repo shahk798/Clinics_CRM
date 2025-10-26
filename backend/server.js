@@ -176,25 +176,51 @@ app.get('/api/patients', async (req, res) => {
     console.log('Fetching appointments for clinicId:', clinicId);
     if (!clinicId) return res.status(400).json({ message: 'Clinic ID required' });
 
+    // Map of clinic IDs to their full names
+    const clinicNames = {
+      'Sha_001': 'Shai Dental Studio',
+      'shai_dental': 'Shai Dental Studio'
+    };
+
     // Get all appointments to debug
     const allAppointments = await Appointment.find({}).lean();
     console.log('All appointments in DB:', allAppointments);
+    
+    // Log each appointment's clinic information
+    allAppointments.forEach(apt => {
+      console.log('Appointment clinic info:', {
+        id: apt._id,
+        clinic_name: apt.clinic_name,
+        clinicId: apt.clinicId,
+        clinic_id: apt.clinic_id
+      });
+    });
 
     // Now get filtered appointments with more flexible matching
     const appointments = await Appointment.find({
       $or: [
         { clinicId: clinicId },
-        { clinic_name: clinicId },
-        { clinic_id: clinicId }
+        { clinic_name: { $in: [clinicId, 'Shai Dental Studio'] } },
+        { clinic_id: clinicId },
+        { clinic_name: new RegExp(clinicId, 'i') } // Case-insensitive match
       ]
     }).lean();
     
+    console.log('Query used:', {
+      $or: [
+        { clinicId: clinicId },
+        { clinic_name: { $in: [clinicId, 'Shai Dental Studio'] } },
+        { clinic_id: clinicId },
+        { clinic_name: new RegExp(clinicId, 'i') }
+      ]
+    });
     console.log('Found appointments for clinic:', appointments);
 
     // Format appointments for frontend with debugging
     console.log('Raw appointments before formatting:', appointments);
     
     const formattedAppointments = appointments.map(a => {
+      // Keep the original clinic name from the database
       const formatted = {
         _id: a._id,
         clinic_name: a.clinic_name || a.clinicId || a.clinic_id || clinicId,
@@ -211,6 +237,8 @@ app.get('/api/patients', async (req, res) => {
       console.log('Formatted appointment:', formatted);
       return formatted;
     });
+
+    console.log(`Found ${formattedAppointments.length} appointments for clinic ${clinicId}`);
 
     // Sort by date/time (newest first)
     formattedAppointments.sort((a, b) => {
