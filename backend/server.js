@@ -85,10 +85,11 @@ const appointmentSchema = new mongoose.Schema({
 });
 
 const userSchema = new mongoose.Schema({
-  clinicId: { type: String, required: true },
-  username: { type: String, required: true },
+  clinic_name: { type: String, required: true },
+  clinicId: { type: String, required: true, unique: true },
+  username: { type: String, required: true, unique: true },
   password: { type: String, required: true }
-});
+}, { timestamps: true });
 
 const Patient = mongoose.model('Patient', patientSchema);
 // Use a generic 'appointments' collection for cross-app data; if you prefer clinic-specific collections change the third arg
@@ -115,6 +116,45 @@ async function createClinic() {
 }
 
 // Routes
+
+// Auth signup
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { clinic_name, username, clinicId, password } = req.body;
+
+    // Check if username already exists
+    const existingUser = await User.findOne({ 
+      $or: [
+        { username },
+        { clinicId }
+      ]
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ 
+        message: existingUser.username === username 
+          ? 'Username already exists' 
+          : 'Clinic ID already exists'
+      });
+    }
+
+    // Create new user
+    const user = new User({
+      clinic_name,
+      username,
+      clinicId,
+      password  // In production, you should hash this password
+    });
+
+    await user.save();
+    console.log('New user created:', { clinic_name, username, clinicId });
+    
+    res.status(201).json({ message: 'Account created successfully' });
+  } catch (err) {
+    console.error('Signup error:', err);
+    res.status(500).json({ message: 'Failed to create account' });
+  }
+});
 
 // Auth login
 app.post('/api/auth/login', async (req, res) => {

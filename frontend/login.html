@@ -16,8 +16,29 @@
       <button type="submit" class="btn-primary">Login</button>
       <p id="error-message"></p>
     </form>
-    <button id="resetPassword" class="btn-secondary">Forgot Password?</button>
+    <div class="form-footer">
+      <button id="resetPassword" class="btn-secondary">Forgot Password?</button>
+      <p class="signup-link">Don't have an account? <a href="signup.html">Sign up here</a></p>
+    </div>
   </div>
+
+  <style>
+    .form-footer {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .signup-link {
+      margin-top: 15px;
+      color: #fff;
+    }
+    .signup-link a {
+      color: #4CAF50;
+      text-decoration: none;
+    }
+    .signup-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
 
   <script>
     // Fetch default clinic ID from backend
