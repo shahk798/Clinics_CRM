@@ -13,12 +13,13 @@ app.use(bodyParser.json());
 
 const path = require('path');
 
-// Serve frontend static files
-app.use(express.static(path.join(__dirname, 'frontend')));
+// Serve frontend static files (frontend lives at repo root ../frontend when backend is in /backend)
+const frontendPath = path.join(__dirname, '..', 'frontend');
+app.use(express.static(frontendPath));
 
-// Redirect root to login page
+// Redirect root to frontend index
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend/index.html'));
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 // Expose a small clinic config endpoint used by the frontend
