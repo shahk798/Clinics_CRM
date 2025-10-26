@@ -3,11 +3,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const setupLogger = require('./logger');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const logger = setupLogger();
 
 // Middleware
 app.use(cors());
@@ -16,16 +14,22 @@ app.use(bodyParser.json());
 const path = require('path');
 
 // Serve frontend static files
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'frontend')));
 
 // Redirect root to login page
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/login.html'));
+  res.sendFile(path.join(__dirname, 'frontend/index.html'));
 });
 
 // Expose a small clinic config endpoint used by the frontend
 app.get('/api/clinic-config', (req, res) => {
-  return res.json({ clinicId: process.env.CLINIC_ID || '' });
+  try {
+    console.log('Clinic config requested');
+    return res.json({ clinicId: process.env.CLINIC_ID || '' });
+  } catch (err) {
+    console.error('Error in clinic-config:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
 });
 
 
@@ -152,20 +156,6 @@ app.delete('/api/patients/:id', async (req, res) => {
     console.error(err);
     res.status(500).json({ message: 'Failed to delete patient' });
   }
-});
-
-// Welcome endpoint
-app.get('/api/welcome', (req, res) => {
-  logger.info(`Request received: ${req.method} ${req.path}`);
-  res.json({ message: 'Welcome to the Express API Service!' });
-});
-
-// Env endpoint for frontend
-app.get('/api/env', (req, res) => {
-  res.json({
-    CLINIC_ID: process.env.CLINIC_ID,
-    USERNAME: process.env.USERNAME
-  });
 });
 
 // Start server
