@@ -48,15 +48,30 @@ app.get('/api/clinic-config', (req, res) => {
 // MongoDB connection
 const mongoUri = process.env.MONGO_URI;
 if (!mongoUri) {
-  console.warn('⚠️  MONGO_URI is not set. Database features will be disabled. To enable, set MONGO_URI in your .env (e.g. mongodb://localhost:27017/clinics_db)');
+  console.warn('⚠️  MONGO_URI is not set. Database features will be disabled. To enable, set MONGO_URI in your .env');
 } else {
+  console.log('Connecting to MongoDB...');
   mongoose.connect(mongoUri, {
     useNewUrlParser: true,
     useUnifiedTopology: true
   })
   .then(async () => {
     console.log("✅ MongoDB Connected");
-    // Auto-create clinic from .env if it doesn't exist (only after DB connect)
+    
+    // List all collections
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    console.log('Available collections:', collections.map(c => c.name));
+    
+    // Count documents in appointments collection
+    const appointmentsCount = await Appointment.countDocuments();
+    console.log(`Found ${appointmentsCount} documents in appointments collection`);
+    
+    if (appointmentsCount > 0) {
+      const sampleAppointment = await Appointment.findOne();
+      console.log('Sample appointment:', sampleAppointment);
+    }
+    
+    // Auto-create clinic from .env if it doesn't exist
     await createClinic();
   })
   .catch(err => console.error("❌ MongoDB Connection Error:", err));
@@ -285,6 +300,21 @@ app.delete('/api/patients/:id', async (req, res) => {
   } catch (err) {
     console.error('Error deleting patient:', err);
     res.status(500).json({ message: 'Failed to delete patient' });
+  }
+});
+
+// Debug endpoint to check appointments collection
+app.get('/api/debug/appointments', async (req, res) => {
+  try {
+    const appointments = await Appointment.find({});
+    console.log('All appointments in DB:', appointments);
+    res.json({
+      count: appointments.length,
+      appointments: appointments
+    });
+  } catch (err) {
+    console.error('Error fetching appointments:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 
