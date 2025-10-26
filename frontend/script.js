@@ -87,18 +87,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${escapeHtml(p.patient_name || '')}</td>
+        <td>${escapeHtml(p.name || '')}</td>
         <td>${escapeHtml(p.phone || '')}</td>
         <td>${escapeHtml(p.email || '')}</td>
         <td>${escapeHtml(p.service || '')}</td>
         <td>₹${p.price || 0}</td>
-        <td>${p.appointment_date || ''}</td>
-        <td>${p.appointment_time || ''}</td>
-        <td>${p.status || 'Pending'}</td>
-        <td>
-          <button class="btn-small" data-action="view" data-id="${p._id}">View</button>
-          <button class="btn-small" data-action="edit" data-id="${p._id}">Edit</button>
-          <button class="btn-small btn-danger" data-action="delete" data-id="${p._id}">Delete</button>
+        <td>${p.date || ''}</td>
+        <td>${p.time || ''}</td>
+        <td class="status-${p.status?.toLowerCase() || 'pending'}">${p.status || 'Pending'}</td>
+        <td class="action-buttons">
+          <button class="btn-action btn-view" data-action="view" data-id="${p._id}">View</button>
+          <button class="btn-action btn-edit" data-action="edit" data-id="${p._id}">Edit</button>
+          <button class="btn-action btn-delete" data-action="delete" data-id="${p._id}">Delete</button>
         </td>
       `;
       patientTableBody.appendChild(tr);
@@ -133,36 +133,46 @@ document.addEventListener('DOMContentLoaded', () => {
   patientForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const payload = {
-      clinic_name: clinicId,
-      patient_name: document.getElementById('pName').value.trim(),
+      clinicId: clinicId,
+      name: document.getElementById('pName').value.trim(),
       phone: document.getElementById('pPhone').value.trim().replace(/\D/g, ''),
       email: document.getElementById('pEmail').value.trim(),
       service: document.getElementById('pService').value.trim(),
       price: Number(document.getElementById('pPrice').value) || 0,
-      appointment_date: document.getElementById('pDate').value,
-      appointment_time: document.getElementById('pTime').value,
+      date: document.getElementById('pDate').value,
+      time: document.getElementById('pTime').value,
       status: document.getElementById('pStatus').value,
       source: 'dashboard'
     };
     console.log('Submitting appointment data:', payload);
 
     try {
+      let res;
       if (editingId) {
-        const res = await fetch(`${apiBase}/api/patients/${editingId}`, {
-          method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+        res = await fetch(`${apiBase}/api/patients/${editingId}`, {
+          method: 'PUT',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error('Update failed');
       } else {
-        const res = await fetch(`${apiBase}/api/patients`, {
-          method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+        res = await fetch(`${apiBase}/api/patients`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error('Save failed');
       }
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.message || 'Operation failed');
+      }
+      
       patientModal.style.display = 'none';
       await fetchPatients();
     } catch (err) {
-      console.error(err);
-      alert('Failed to save patient');
+      console.error('Error saving patient:', err);
+      alert(err.message || 'Failed to save patient. Please try again.');
     }
   });
 
@@ -175,13 +185,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const patient = patients.find(p => p._id === id);
     if (action === 'view') {
       document.getElementById('profileDetails').innerHTML = `
-        <p><strong>Name:</strong> ${escapeHtml(patient.patient_name)}</p>
+        <p><strong>Name:</strong> ${escapeHtml(patient.name)}</p>
         <p><strong>Phone:</strong> ${escapeHtml(patient.phone)}</p>
         <p><strong>Email:</strong> ${escapeHtml(patient.email)}</p>
         <p><strong>Service:</strong> ${escapeHtml(patient.service)}</p>
         <p><strong>Price:</strong> ₹${patient.price || 0}</p>
-        <p><strong>Date:</strong> ${patient.appointment_date}</p>
-        <p><strong>Time:</strong> ${patient.appointment_time}</p>
+        <p><strong>Date:</strong> ${patient.date}</p>
+        <p><strong>Time:</strong> ${patient.time}</p>
         <p><strong>Status:</strong> ${patient.status || 'Pending'}</p>
         <p><strong>Source:</strong> ${patient.source || 'N/A'}</p>
       `;
@@ -189,13 +199,13 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (action === 'edit') {
       editingId = id;
       modalTitle.innerText = 'Edit Patient';
-      document.getElementById('pName').value = patient.patient_name || '';
+      document.getElementById('pName').value = patient.name || '';
       document.getElementById('pPhone').value = patient.phone || '';
       document.getElementById('pEmail').value = patient.email || '';
       document.getElementById('pService').value = patient.service || '';
       document.getElementById('pPrice').value = patient.price || 0;
-      document.getElementById('pDate').value = patient.appointment_date || '';
-      document.getElementById('pTime').value = patient.appointment_time || '';
+      document.getElementById('pDate').value = patient.date || '';
+      document.getElementById('pTime').value = patient.time || '';
       document.getElementById('pStatus').value = patient.status || 'Pending';
       patientModal.style.display = 'block';
     } else if (action === 'delete') {
