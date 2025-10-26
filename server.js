@@ -144,62 +144,43 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/patients', async (req, res) => {
   try {
     const { clinicId } = req.query;
-    console.log('Fetching patients for clinicId:', clinicId);
+    console.log('Fetching appointments for clinicId:', clinicId);
     if (!clinicId) return res.status(400).json({ message: 'Clinic ID required' });
 
-    // Get both patients and appointments
-    const [patients, appointments] = await Promise.all([
-      Patient.find({ clinicId }).lean(),
-      Appointment.find({}).lean()  // Get all appointments first to debug
-    ]);
+    // Get appointments only (we're not using patients collection anymore)
+    const appointments = await Appointment.find({
+      $or: [
+        { clinic_name: clinicId },
+        { clinic_name: { $exists: false } }
+      ]
+    }).lean();
 
-    console.log('Found patients:', patients.length);
     console.log('Found appointments:', appointments.length);
-    console.log('Sample appointment:', appointments[0]);
+    if (appointments.length > 0) {
+      console.log('Sample appointment:', appointments[0]);
+    }
 
-    // Debug log each appointment
-    appointments.forEach((a, i) => {
-      console.log(`Appointment ${i + 1}:`, {
-        name: a.name,
-        phone: a.phone,
-        clinicId: a.clinicId,
-        service: a.service
-      });
-    });
-
-    // Combine both results, avoiding duplicates by phone number
-    const phoneMap = new Map();
-    
-    // Add patients first
-    patients.forEach(p => phoneMap.set(p.phone, {
-      ...p,
-      source: 'patient'
+    // Convert appointments to frontend format
+    const formattedAppointments = appointments.map(a => ({
+      _id: a._id,
+      clinicId: a.clinic_name || clinicId,
+      name: a.patient_name || '',
+      phone: a.phone || '',
+      email: a.email || '',
+      service: a.service || '',
+      price: a.price || 0,
+      date: a.appointment_date || '',
+      time: a.appointment_time || '',
+      status: a.status || 'Pending',
+      source: a.source || 'whatsapp'
     }));
-    
-    // Add appointments
-    appointments.forEach(a => {
-      console.log('Processing appointment:', a);
-      const appointmentData = {
-        clinicId: a.clinic_name || clinicId,
-        name: a.patient_name || '',
-        phone: a.phone || '',
-        email: a.email || '',
-        service: a.service || '',
-        price: a.price || 0,
-        date: a.appointment_date || '',
-        time: a.appointment_time || '',
-        status: 'Pending',
-        source: 'appointment'
-      };
-      // Always add WhatsApp appointments
-      phoneMap.set(a.phone, appointmentData);
-    });
 
-    // Convert map back to array
-    const combined = Array.from(phoneMap.values());
-    console.log('Total combined records:', combined.length);
-    console.log('Sample combined record:', combined[0]);
-    res.json(combined);
+    console.log('Formatted appointments:', formattedAppointments.length);
+    if (formattedAppointments.length > 0) {
+      console.log('Sample formatted appointment:', formattedAppointments[0]);
+    }
+    
+    res.json(formattedAppointments);
   } catch (err) {
     console.error('Error fetching patients/appointments:', err);
     res.status(500).json({ message: 'Server error' });
@@ -238,58 +219,57 @@ app.post('/api/patients', async (req, res) => {
   }
 });
 
-// Update patient
+// Update patient (in appointments collection)
 app.put('/api/patients/:id', async (req, res) => {
   try {
-    const patient = await Patient.findById(req.params.id);
-    if (!patient) {
-      return res.status(404).json({ message: 'Patient not found' });
+    const appointment = await Appointment.findById(req.params.id);
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
     }
 
-    // Update in Patient collection
-    const updated = await Patient.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    // Update appointment with correct field names
+    const updateData = {
+      clinic_name: req.body.clinicId,
+      patient_name: req.body.name,
+      phone: req.body.phone,
+      email: req.body.email,
+      service: req.body.service,
+      price: req.body.price,
+      appointment_date: req.body.date,
+      appointment_time: req.body.time,
+      status: req.body.status
+    };
 
-    // Also update in Appointment collection if exists (match by phone number)
-    await Appointment.updateMany(
-      { phone: patient.phone },
-      {
-        $set: {
-          name: req.body.name,
-          service: req.body.service,
-          date: req.body.date,
-          time: req.body.time,
-          status: req.body.status
-        }
-      }
+    const updated = await Appointment.findByIdAndUpdate(
+      req.params.id, 
+      updateData,
+      { new: true }
     );
 
-    console.log('Updated patient and related appointments');
+    console.log('Updated appointment:', updated);
     res.json(updated);
   } catch (err) {
-    console.error('Error updating patient:', err);
-    res.status(500).json({ message: 'Failed to update patient' });
+    console.error('Error updating appointment:', err);
+    res.status(500).json({ message: 'Failed to update appointment' });
   }
 });
 
-// Delete patient
+// Delete patient (from appointments collection)
 app.delete('/api/patients/:id', async (req, res) => {
   try {
-    const patient = await Patient.findById(req.params.id);
-    if (!patient) {
-      return res.status(404).json({ message: 'Patient not found' });
+    const appointment = await Appointment.findById(req.params.id);
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
     }
 
-    // Delete from Patient collection
-    await Patient.findByIdAndDelete(req.params.id);
+    // Delete from Appointments collection
+    await Appointment.findByIdAndDelete(req.params.id);
 
-    // Also delete from Appointment collection if exists
-    await Appointment.deleteMany({ phone: patient.phone });
-
-    console.log('Deleted patient and related appointments');
-    res.json({ message: 'Deleted from both collections' });
+    console.log('Deleted appointment:', req.params.id);
+    res.json({ message: 'Deleted successfully' });
   } catch (err) {
-    console.error('Error deleting patient:', err);
-    res.status(500).json({ message: 'Failed to delete patient' });
+    console.error('Error deleting appointment:', err);
+    res.status(500).json({ message: 'Failed to delete appointment' });
   }
 });
 
