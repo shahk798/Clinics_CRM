@@ -14,16 +14,22 @@ app.use(bodyParser.json());
 const path = require('path');
 
 // Serve frontend static files
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'frontend')));
 
 // Redirect root to login page
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/login.html'));
+  res.sendFile(path.join(__dirname, 'frontend/index.html'));
 });
 
 // Expose a small clinic config endpoint used by the frontend
 app.get('/api/clinic-config', (req, res) => {
-  return res.json({ clinicId: process.env.CLINIC_ID || '' });
+  try {
+    console.log('Clinic config requested');
+    return res.json({ clinicId: process.env.CLINIC_ID || '' });
+  } catch (err) {
+    console.error('Error in clinic-config:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
 });
 
 
