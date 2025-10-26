@@ -88,6 +88,7 @@ const userSchema = new mongoose.Schema({
   clinic_name: { type: String, required: true },
   clinicId: { type: String, required: true, unique: true },
   username: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
   password: { type: String, required: true }
 }, { timestamps: true });
 
@@ -120,22 +121,28 @@ async function createClinic() {
 // Auth signup
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { clinic_name, username, clinicId, password } = req.body;
+    const { clinic_name, username, clinicId, email, password } = req.body;
 
-    // Check if username already exists
+    // Validate required fields
+    if (!clinic_name || !username || !clinicId || !email || !password) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    // Check if username, clinicId or email already exists
     const existingUser = await User.findOne({ 
       $or: [
         { username },
-        { clinicId }
+        { clinicId },
+        { email }
       ]
     });
 
     if (existingUser) {
-      return res.status(400).json({ 
-        message: existingUser.username === username 
-          ? 'Username already exists' 
-          : 'Clinic ID already exists'
-      });
+      let message = 'User already exists';
+      if (existingUser.username === username) message = 'Username already exists';
+      else if (existingUser.clinicId === clinicId) message = 'Clinic ID already exists';
+      else if (existingUser.email === email) message = 'Email already exists';
+      return res.status(400).json({ message });
     }
 
     // Create new user
@@ -143,11 +150,12 @@ app.post('/api/auth/signup', async (req, res) => {
       clinic_name,
       username,
       clinicId,
+      email,
       password  // In production, you should hash this password
     });
 
     await user.save();
-    console.log('New user created:', { clinic_name, username, clinicId });
+    console.log('New user created:', { clinic_name, username, clinicId, email });
     
     res.status(201).json({ message: 'Account created successfully' });
   } catch (err) {

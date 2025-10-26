@@ -118,6 +118,10 @@
         <input type="text" id="username" placeholder="Enter username" required>
       </div>
       <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="Enter email address" required>
+      </div>
+      <div class="form-group">
         <label for="clinicId">Clinic ID</label>
         <input type="text" id="clinicId" placeholder="Enter clinic ID" required>
       </div>
@@ -156,6 +160,7 @@
           clinic_name: document.getElementById('clinicName').value.trim(),
           username: document.getElementById('username').value.trim(),
           clinicId: document.getElementById('clinicId').value.trim(),
+          email: document.getElementById('email').value.trim(),
           password: password
         };
 
