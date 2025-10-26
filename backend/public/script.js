@@ -162,49 +162,79 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     try {
+      let response;
       if (editIndex !== null) {
-        await fetch(`${BASE_URL}/api/patients/${patients[editIndex]._id}`, {
+        response = await fetch(`${BASE_URL}/api/patients/${patients[editIndex]._id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(patient)
         });
       } else {
-        await fetch(`${BASE_URL}/api/patients`, {
+        response = await fetch(`${BASE_URL}/api/patients`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(patient)
         });
       }
-      modal.style.display = "none";
-      await fetchPatients();
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        modal.style.display = "none";
+        await fetchPatients();
+        // Reset edit index after successful save
+        editIndex = null;
+      } else {
+        alert(data.message || "Failed to save patient data");
+      }
     } catch (err) {
       console.error("Error saving patient", err);
+      alert("Error saving patient. Please try again.");
     }
   });
 
   // Edit / Delete / View
-  tableBody.addEventListener("click", (e) => {
-    const index = e.target.dataset.index;
+  tableBody.addEventListener("click", async (e) => {
+    const index = parseInt(e.target.dataset.index);
+    
+    if (isNaN(index) || !patients[index]) {
+      console.error('Invalid patient index');
+      return;
+    }
 
     if (e.target.classList.contains("editBtn")) {
       editIndex = index;
       const p = patients[index];
       modal.style.display = "flex";
       document.getElementById("modalTitle").innerText = "Edit Patient";
-      document.getElementById("pName").value = p.name;
-      document.getElementById("pPhone").value = p.phone;
-      document.getElementById("pEmail").value = p.email;
-      document.getElementById("pService").value = p.service;
-      document.getElementById("pPrice").value = p.price;
-      document.getElementById("pDate").value = p.date;
-      document.getElementById("pDay").value = p.time;
-      document.getElementById("pStatus").value = p.status;
+      document.getElementById("pName").value = p.name || '';
+      document.getElementById("pPhone").value = p.phone || '';
+      document.getElementById("pEmail").value = p.email || '';
+      document.getElementById("pService").value = p.service || '';
+      document.getElementById("pPrice").value = p.price || '';
+      document.getElementById("pDate").value = p.date || '';
+      document.getElementById("pDay").value = p.time || '';
+      document.getElementById("pStatus").value = p.status || 'Pending';
     }
 
     if (e.target.classList.contains("deleteBtn")) {
-      if (confirm("Delete this patient?")) {
-        fetch(`${BASE_URL}/api/patients/${patients[index]._id}`, { method: "DELETE" })
-          .then(() => fetchPatients());
+      if (confirm("Are you sure you want to delete this patient?")) {
+        try {
+          const response = await fetch(`${BASE_URL}/api/patients/${patients[index]._id}`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" }
+          });
+
+          if (response.ok) {
+            await fetchPatients();
+          } else {
+            const data = await response.json();
+            alert(data.message || "Failed to delete patient");
+          }
+        } catch (err) {
+          console.error("Error deleting patient:", err);
+          alert("Error deleting patient. Please try again.");
+        }
       }
     }
 
