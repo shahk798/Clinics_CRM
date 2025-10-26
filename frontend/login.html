@@ -132,7 +132,11 @@
     </form>
     <div class="form-footer">
       <button id="resetPassword" class="btn-forgot">Forgot Password?</button>
-      <p class="signup-link">
+      <!-- Prominent signup button so it's clearly visible -->
+      <div style="margin-top:14px;">
+        <a class="btn-signup-link" href="signup.html" role="button">Create an account</a>
+      </div>
+      <p class="signup-link" style="margin-top:10px; display:none;">
         Don't have an account? <a href="signup.html">Sign up here</a>
       </p>
     </div>
@@ -179,6 +183,11 @@
 
     document.getElementById("resetPassword").addEventListener("click", () => {
       alert("Password reset link will be sent to your registered email.");
+    });
+    // Make signup button accessible via keyboard (anchor already navigates)
+    const signupBtn = document.querySelector('.btn-signup-link');
+    if (signupBtn) signupBtn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') window.location.href = 'signup.html';
     });
   </script>
 </body>
