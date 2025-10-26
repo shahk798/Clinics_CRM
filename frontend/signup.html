@@ -6,20 +6,31 @@
   <title>Lumonex Agency - Signup</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    }
+
     .signup-container {
-      max-width: 400px;
-      margin: 50px auto;
-      padding: 20px;
       background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(10px);
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+      width: 100%;
+      max-width: 400px;
     }
 
     .signup-container h2 {
+      color: white;
       text-align: center;
-      color: #fff;
       margin-bottom: 30px;
+      font-size: 28px;
     }
 
     .form-group {
@@ -28,33 +39,36 @@
 
     .form-group label {
       display: block;
-      color: #fff;
-      margin-bottom: 5px;
+      color: white;
+      margin-bottom: 8px;
+      font-size: 14px;
     }
 
     .form-group input {
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 12px 15px;
       width: 100%;
-      padding: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 5px;
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
+      color: white;
       font-size: 16px;
+      box-sizing: border-box;
     }
 
     .form-group input::placeholder {
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(255, 255, 255, 0.7);
     }
 
     .btn-signup {
-      width: 100%;
-      padding: 12px;
       background: #4CAF50;
-      border: none;
-      border-radius: 5px;
       color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      width: 100%;
       font-size: 16px;
       cursor: pointer;
+      margin-top: 10px;
       transition: background-color 0.3s;
     }
 
@@ -65,16 +79,25 @@
     .login-link {
       text-align: center;
       margin-top: 20px;
-      color: #fff;
+      color: white;
+      font-size: 14px;
     }
 
     .login-link a {
       color: #4CAF50;
       text-decoration: none;
+      font-weight: bold;
     }
 
     .login-link a:hover {
       text-decoration: underline;
+    }
+
+    .error-message {
+      color: #ff6b6b;
+      text-align: center;
+      margin-top: 10px;
+      font-size: 14px;
     }
   </style>
 </head>
