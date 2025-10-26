@@ -16,9 +16,20 @@ const path = require('path');
 // Serve frontend static files
 app.use(express.static(path.join(__dirname, 'frontend')));
 
+// Also serve from public directory for backward compatibility
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Redirect root to login page
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend/index.html'));
+  // Try frontend first, then public
+  const frontendPath = path.join(__dirname, 'frontend/index.html');
+  const publicPath = path.join(__dirname, 'public/index.html');
+  
+  if (require('fs').existsSync(frontendPath)) {
+    res.sendFile(frontendPath);
+  } else {
+    res.sendFile(publicPath);
+  }
 });
 
 // Expose a small clinic config endpoint used by the frontend
@@ -53,14 +64,18 @@ if (!mongoUri) {
 
 // Schemas
 const appointmentSchema = new mongoose.Schema({
-  clinicId: { type: String, required: true },
+  clinicId: { type: String, required: false }, // Make optional since WhatsApp bot might not set it
   name: String,
   phone: String,
   service: String,
   date: String,
   time: String,
-  status: String
-}, { collection: 'appointments' });
+  status: { type: String, default: 'Pending' }
+}, { 
+  collection: 'appointments',
+  timestamps: true,
+  strict: false // Allow additional fields from WhatsApp bot
+});
 
 const patientSchema = new mongoose.Schema({
   clinicId: { type: String, required: true },
@@ -130,39 +145,55 @@ app.get('/api/patients', async (req, res) => {
 
     // Get both patients and appointments
     const [patients, appointments] = await Promise.all([
-      Patient.find({ clinicId }),
-      Appointment.find({})  // Get all appointments first to debug
+      Patient.find({ clinicId }).lean(),
+      Appointment.find({}).lean()  // Get all appointments first to debug
     ]);
 
     console.log('Found patients:', patients.length);
     console.log('Found appointments:', appointments.length);
     console.log('Sample appointment:', appointments[0]);
 
+    // Debug log each appointment
+    appointments.forEach((a, i) => {
+      console.log(`Appointment ${i + 1}:`, {
+        name: a.name,
+        phone: a.phone,
+        clinicId: a.clinicId,
+        service: a.service
+      });
+    });
+
     // Combine both results, avoiding duplicates by phone number
     const phoneMap = new Map();
     
     // Add patients first
-    patients.forEach(p => phoneMap.set(p.phone, p));
+    patients.forEach(p => phoneMap.set(p.phone, {
+      ...p,
+      source: 'patient'
+    }));
     
-    // Add appointments
+    // Add appointments, always add them as they're from WhatsApp
     appointments.forEach(a => {
-      // Check if this appointment matches our clinicId
-      if (a.clinicId === clinicId || !a.clinicId) {
-        phoneMap.set(a.phone, {
-          clinicId: clinicId,
-          name: a.name,
-          phone: a.phone,
-          service: a.service,
-          date: a.date,
-          time: a.time,
-          status: a.status || 'Pending'
-        });
-      }
+      const appointmentData = {
+        clinicId: clinicId,
+        name: a.name,
+        phone: a.phone,
+        email: a.email || '',
+        service: a.service || a.treatment || '',  // Check both fields
+        price: a.price || 0,
+        date: a.date || a.appointmentDate || '',  // Check both fields
+        time: a.time || a.appointmentTime || '',  // Check both fields
+        status: a.status || 'Pending',
+        source: 'appointment'
+      };
+      // Always add WhatsApp appointments
+      phoneMap.set(a.phone, appointmentData);
     });
 
     // Convert map back to array
     const combined = Array.from(phoneMap.values());
     console.log('Total combined records:', combined.length);
+    console.log('Sample combined record:', combined[0]);
     res.json(combined);
   } catch (err) {
     console.error('Error fetching patients/appointments:', err);
