@@ -16,20 +16,9 @@ const path = require('path');
 // Serve frontend static files
 app.use(express.static(path.join(__dirname, 'frontend')));
 
-// Also serve from public directory for backward compatibility
-app.use(express.static(path.join(__dirname, 'public')));
-
 // Redirect root to login page
 app.get('/', (req, res) => {
-  // Try frontend first, then public
-  const frontendPath = path.join(__dirname, 'frontend/index.html');
-  const publicPath = path.join(__dirname, 'public/index.html');
-  
-  if (require('fs').existsSync(frontendPath)) {
-    res.sendFile(frontendPath);
-  } else {
-    res.sendFile(publicPath);
-  }
+  res.sendFile(path.join(__dirname, 'frontend/index.html'));
 });
 
 // Expose a small clinic config endpoint used by the frontend
