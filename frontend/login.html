@@ -14,35 +14,46 @@
       align-items: center;
       justify-content: center;
       background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     }
 
     .login-container {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.15);
       backdrop-filter: blur(10px);
       padding: 40px;
-      border-radius: 15px;
+      border-radius: 20px;
       box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
       width: 100%;
       max-width: 400px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .login-container h2 {
       color: white;
       text-align: center;
       margin-bottom: 30px;
-      font-size: 28px;
+      font-size: 32px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
     }
 
     .input-field {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.1);
       border: 2px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      padding: 12px 15px;
+      border-radius: 12px;
+      padding: 14px 18px;
       width: 100%;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
       color: white;
       font-size: 16px;
       box-sizing: border-box;
+      transition: all 0.3s ease;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.15);
     }
 
     .input-field::placeholder {
@@ -52,30 +63,34 @@
     .btn-login {
       background: #4CAF50;
       color: white;
-      padding: 12px;
+      padding: 14px;
       border: none;
-      border-radius: 8px;
+      border-radius: 12px;
       width: 100%;
       font-size: 16px;
+      font-weight: 600;
       cursor: pointer;
       margin-top: 10px;
-      transition: background-color 0.3s;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
     }
 
     .btn-login:hover {
       background: #45a049;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
     }
-
 
     .btn-forgot {
       background: transparent;
       border: none;
       color: white;
-      margin-top: 15px;
+      margin-top: 20px;
       cursor: pointer;
       font-size: 14px;
       opacity: 0.8;
-      transition: opacity 0.3s;
+      transition: all 0.3s ease;
+      text-decoration: underline;
     }
 
     .btn-forgot:hover {
@@ -87,49 +102,70 @@
       text-align: center;
       margin-top: 10px;
       font-size: 14px;
+      padding: 10px;
+      background: rgba(255, 107, 107, 0.1);
+      border-radius: 8px;
+      display: none;
+    }
+
+    .error-message.visible {
+      display: block;
     }
 
     .form-footer {
       text-align: center;
-      margin-top: 20px;
+      margin-top: 30px;
     }
 
-    .signup-link {
+    .signup-section {
+      margin-top: 30px;
+      text-align: center;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-signup {
+      display: inline-block;
+      padding: 14px 28px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #10b981, #059669);
       color: white;
-      margin-top: 15px;
-      font-size: 14px;
-    }
-
-    .signup-link a {
-      color: #4CAF50;
       text-decoration: none;
-      font-weight: bold;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.2);
+      transition: all 0.3s ease;
     }
 
-    .signup-link a:hover {
-      text-decoration: underline;
+    .btn-signup:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(16, 185, 129, 0.3);
+    }
+
+    .signup-text {
+      color: white;
+      margin-bottom: 15px;
+      font-size: 16px;
+      opacity: 0.9;
     }
   </style>
 </head>
 <body>
   <div class="login-container">
-    <h2>Login to Your Clinic</h2>
+    <h2>Welcome Back</h2>
     <form id="loginForm">
       <input type="text" id="clinicId" class="input-field" placeholder="Clinic ID" required>
       <input type="text" id="username" class="input-field" placeholder="Username" required>
       <input type="password" id="password" class="input-field" placeholder="Password" required>
-      <button type="submit" class="btn-login">Login</button>
+      <button type="submit" class="btn-login">Sign In</button>
       <p id="error-message" class="error-message"></p>
     </form>
     <div class="form-footer">
-      <button id="resetPassword" class="btn-forgot">Forgot Password?</button>
-      <!-- Prominent signup button so it's clearly visible -->
-      <div style="margin-top:14px;">
-        <a class="btn-signup-link" href="signup.html" role="button" style="display:inline-block;padding:10px 18px;border-radius:8px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;text-decoration:none;font-weight:600;box-shadow:0 8px 24px rgba(16,185,129,0.16);">Create an account</a>
-      </div>
-      <p class="signup-link" style="margin-top:10px; display:none;">
-        Don't have an account? <a href="signup.html">Sign up here</a>
-      </p>
+      <button id="resetPassword" class="btn-forgot">Forgot your password?</button>
+    </div>
+    <div class="signup-section">
+      <p class="signup-text">New to Lumonex?</p>
+      <a href="signup.html" class="btn-signup">Create your account</a>
     </div>
   </div>
 
