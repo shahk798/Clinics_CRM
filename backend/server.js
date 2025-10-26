@@ -68,19 +68,21 @@ const patientSchema = new mongoose.Schema({
 // Appointment schema (also store a copy of patient data for integration with whatsapp_chatbot)
 const appointmentSchema = new mongoose.Schema({
   clinicId: String,
-  clinicName: String,
+  clinic_name: String,
+  clinic_id: String,
   patient_name: String,
-  name: String,
   phone: String,
   email: String,
   service: String,
   price: Number,
   appointment_date: String,
   appointment_time: String,
-  date: String,
-  time: String,
-  status: String
-}, { timestamps: true });
+  status: { type: String, default: 'Pending' },
+  source: { type: String, default: 'dashboard' }
+}, { 
+  collection: 'appointments',
+  timestamps: true 
+});
 
 const userSchema = new mongoose.Schema({
   clinicId: { type: String, required: true },
@@ -178,31 +180,37 @@ app.get('/api/patients', async (req, res) => {
     const allAppointments = await Appointment.find({}).lean();
     console.log('All appointments in DB:', allAppointments);
 
-    // Now get filtered appointments
+    // Now get filtered appointments with more flexible matching
     const appointments = await Appointment.find({
       $or: [
-        { clinicId },
+        { clinicId: clinicId },
         { clinic_name: clinicId },
-        { clinic_name: { $exists: false } },
-        { clinic_name: null },
-        { clinic_name: '' }
+        { clinic_id: clinicId }
       ]
     }).lean();
+    
+    console.log('Found appointments for clinic:', appointments);
 
-    // Format appointments for frontend
-    const formattedAppointments = appointments.map(a => ({
-      _id: a._id,
-      clinic_name: a.clinic_name || a.clinicId || clinicId,
-      patient_name: a.patient_name || a.name || '',
-      phone: a.phone || '',
-      email: a.email || '',
-      service: a.service || '',
-      price: a.price || 0,
-      appointment_date: a.appointment_date || a.date || '',
-      appointment_time: a.appointment_time || a.time || '',
-      status: a.status || 'Pending',
-      source: a.source || 'whatsapp'
-    }));
+    // Format appointments for frontend with debugging
+    console.log('Raw appointments before formatting:', appointments);
+    
+    const formattedAppointments = appointments.map(a => {
+      const formatted = {
+        _id: a._id,
+        clinic_name: a.clinic_name || a.clinicId || a.clinic_id || clinicId,
+        patient_name: a.patient_name || '',
+        phone: a.phone || '',
+        email: a.email || '',
+        service: a.service || '',
+        price: a.price || 0,
+        appointment_date: a.appointment_date || '',
+        appointment_time: a.appointment_time || '',
+        status: a.status || 'Pending',
+        source: a.source || 'whatsapp'
+      };
+      console.log('Formatted appointment:', formatted);
+      return formatted;
+    });
 
     // Sort by date/time (newest first)
     formattedAppointments.sort((a, b) => {

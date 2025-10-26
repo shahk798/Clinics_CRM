@@ -64,13 +64,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderPatients(list) {
+    console.log('Rendering appointments:', list);
     patientTableBody.innerHTML = '';
     let revenue = 0;
     let completed = 0;
     let pending = 0;
     let cancelled = 0;
 
+    if (!Array.isArray(list)) {
+      console.error('Expected array but got:', list);
+      return;
+    }
+
     list.forEach(p => {
+      console.log('Processing appointment:', p);
       revenue += Number(p.price || 0);
       
       // Count by status
