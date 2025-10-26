@@ -65,6 +65,23 @@ const patientSchema = new mongoose.Schema({
   status: String
 });
 
+// Appointment schema (also store a copy of patient data for integration with whatsapp_chatbot)
+const appointmentSchema = new mongoose.Schema({
+  clinicId: String,
+  clinicName: String,
+  patient_name: String,
+  name: String,
+  phone: String,
+  email: String,
+  service: String,
+  price: Number,
+  appointment_date: String,
+  appointment_time: String,
+  date: String,
+  time: String,
+  status: String
+}, { timestamps: true });
+
 const userSchema = new mongoose.Schema({
   clinicId: { type: String, required: true },
   username: { type: String, required: true },
@@ -72,6 +89,8 @@ const userSchema = new mongoose.Schema({
 });
 
 const Patient = mongoose.model('Patient', patientSchema);
+// Use a generic 'appointments' collection for cross-app data; if you prefer clinic-specific collections change the third arg
+const Appointment = mongoose.model('Appointment', appointmentSchema, 'appointments');
 const User = mongoose.model('User', userSchema);
 
 // Auto-create clinic from .env if it doesn't exist (defined here but only called after DB connect)
@@ -111,14 +130,53 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Get patients (by clinicId)
+// Get patients (by clinicId) — combined from Patients collection and shared Appointments collection
 app.get('/api/patients', async (req, res) => {
   try {
     const { clinicId } = req.query;
     if (!clinicId) return res.status(400).json({ message: 'Clinic ID required' });
 
-    const patients = await Patient.find({ clinicId });
-    res.json(patients);
+    // Fetch patients stored in Clinics_CRM
+    const patients = await Patient.find({ clinicId }).lean();
+
+    // Fetch shared appointments (from whatsapp_chatbot or other sources)
+    const appts = await Appointment.find({ clinicId }).lean();
+
+    // Normalize appointments to the same shape as patients
+    const apptMapped = appts.map(a => ({
+      _id: a._id,
+      clinicId: a.clinicId,
+      name: a.name || a.patient_name || '',
+      phone: a.phone || '',
+      email: a.email || '',
+      service: a.service || '',
+      price: a.price || 0,
+      date: a.appointment_date || a.date || '',
+      time: a.appointment_time || a.time || '',
+      status: a.status || ''
+    }));
+
+    // Combine and sort by date/time (newest first)
+    const combined = patients.map(p => ({
+      _id: p._id,
+      clinicId: p.clinicId,
+      name: p.name,
+      phone: p.phone,
+      email: p.email,
+      service: p.service,
+      price: p.price,
+      date: p.date,
+      time: p.time,
+      status: p.status
+    })).concat(apptMapped);
+
+    combined.sort((a, b) => {
+      const ta = new Date((a.date || '') + ' ' + (a.time || '00:00'));
+      const tb = new Date((b.date || '') + ' ' + (b.time || '00:00'));
+      return tb - ta;
+    });
+
+    res.json(combined);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -130,6 +188,30 @@ app.post('/api/patients', async (req, res) => {
   try {
     const patient = new Patient(req.body);
     await patient.save();
+
+    // Also store a copy in the shared appointments collection for integration
+    try {
+      const clinicName = process.env.CLINIC_NAME || process.env.CLINIC_ID || '';
+      const appt = new Appointment({
+        clinicId: patient.clinicId,
+        clinicName,
+        patient_name: patient.name,
+        name: patient.name,
+        phone: patient.phone,
+        email: patient.email,
+        service: patient.service,
+        price: patient.price,
+        appointment_date: patient.date,
+        appointment_time: patient.time,
+        date: patient.date,
+        time: patient.time,
+        status: patient.status
+      });
+      await appt.save();
+    } catch (apptErr) {
+      console.warn('Warning: failed to save appointment copy:', apptErr.message || apptErr);
+    }
+
     res.json(patient);
   } catch (err) {
     console.error(err);
