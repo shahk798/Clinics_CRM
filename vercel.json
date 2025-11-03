@@ -1,12 +1,10 @@
 {
   "version": 2,
   "builds": [
-    { "src": "server.js", "use": "@vercel/node" },
     { "src": "frontend/**", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "server.js" },
-    { "src": "/", "dest": "/frontend/signup.html" },
+    { "src": "/", "dest": "/frontend/index.html" },
     { "src": "^/favicon.ico$", "dest": "/frontend/favicon.ico" },
     { "src": "^/(.*)$", "dest": "/frontend/$1" }
   ]
