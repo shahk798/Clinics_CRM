@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lumonex Agency - Signup</title>
-  <link rel="stylesheet" href="/frontend/style.css">
+  <link rel="stylesheet" href="style.css">
   <style>
     
     .signup-container {
@@ -201,7 +201,7 @@
           
           if (res.ok) {
             alert(`Account created successfully! Your Clinic ID is: ${clinicId}`);
-            window.location.href = '/frontend/login.html';
+            window.location.href = 'login.html';
           } else {
             errorMessage.innerText = data.message || 'Failed to create account';
             submitBtn.disabled = false;

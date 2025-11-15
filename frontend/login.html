@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lumonex Agency - Login</title>
-  <link rel="stylesheet" href="/frontend/style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="login-container">
@@ -18,7 +18,7 @@
     </form>
     <div class="auth-links">
       <button id="resetPassword" class="btn-secondary">Forgot Password?</button>
-      <a href="/frontend/signup.html" class="btn-create-account">Create Account</a>
+      <a href="signup.html" class="btn-create-account">Create Account</a>
     </div>
   </div>
 
@@ -52,7 +52,7 @@
           localStorage.setItem("loggedIn", "true");
           localStorage.setItem("clinicId", data.clinicId);
           localStorage.setItem("username", username);
-          window.location.href = "/frontend/dashboard.html";
+          window.location.href = "dashboard.html";
         } else {
           errorMessage.innerText = data.message || "Login failed";
         }

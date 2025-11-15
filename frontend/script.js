@@ -2,7 +2,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const apiBase = 'https://clinics-crm.onrender.com'; // production backend
   const clinicId = localStorage.getItem('clinicId');
-  if (!clinicId) return window.location.href = '/frontend/login.html';
+  if (!clinicId) return window.location.href = 'login.html';
 
   // Elements
   const patientTableBody = document.querySelector('#patientTable tbody');
@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.removeItem('loggedIn');
     localStorage.removeItem('clinicId');
     localStorage.removeItem('username');
-    window.location.href = '/frontend/login.html';
+    window.location.href = 'login.html';
   });
 
   // Search
