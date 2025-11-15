@@ -64,6 +64,10 @@ const patientSchema = new mongoose.Schema({
 
 const Patient = mongoose.model('Patient', patientSchema);
 
+// Admin routes - loaded after Patient model is defined
+const adminRoutes = require('./routes/admin');
+app.use('/api/admin', adminRoutes);
+
 // Auto-create clinic from .env if it doesn't exist (defined here but only called after DB connect)
 async function createClinic() {
   const { CLINIC_ID, USERNAME, PASSWORD } = process.env;
@@ -210,10 +214,6 @@ app.delete('/api/patients/:id', async (req, res) => {
     res.status(500).json({ message: 'Failed to delete patient' });
   }
 });
-
-// Admin routes
-const adminRoutes = require('./routes/admin');
-app.use('/api/admin', adminRoutes);
 
 // Start server
 app.listen(PORT, () => {
