@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Lumonex Agency</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      border-bottom: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .admin-header h1 {
+      margin: 0;
+      font-size: 24px;
+      color: #fff;
+    }
+
+    .admin-header .admin-badge {
+      background: rgba(255,255,255,0.2);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .admin-container {
+      padding: 20px 30px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: rgba(255,255,255,0.15);
+      padding: 25px;
+      border-radius: 16px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .stat-card h3 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      color: rgba(255,255,255,0.7);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-card .stat-value {
+      font-size: 36px;
+      font-weight: bold;
+      color: #fff;
+      margin: 10px 0;
+    }
+
+    .stat-card .stat-label {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .section-title {
+      font-size: 20px;
+      margin: 30px 0 15px 0;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .clinics-table-container {
+      background: rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      overflow-x: auto;
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    .admin-table th,
+    .admin-table td {
+      padding: 12px 10px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .admin-table th {
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      font-weight: 600;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .admin-table tr:hover {
+      background: rgba(255,255,255,0.15);
+    }
+
+    .filter-controls {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .filter-controls input,
+    .filter-controls select {
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .filter-controls input::placeholder {
+      color: rgba(255,255,255,0.5);
+    }
+
+    .badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-active {
+      background: #10b981;
+      color: #fff;
+    }
+
+    .badge-inactive {
+      background: #6b7280;
+      color: #fff;
+    }
+
+    .view-btn {
+      padding: 6px 12px;
+      background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .view-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .refresh-btn {
+      background: linear-gradient(135deg, #10b981, #059669);
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .refresh-btn:hover {
+      opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+      .admin-container {
+        padding: 15px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .filter-controls {
+        flex-direction: column;
+      }
+
+      .filter-controls input,
+      .filter-controls select {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Admin Header -->
+  <header class="admin-header">
+    <h1>🛡️ Admin Dashboard</h1>
+    <div style="display: flex; gap: 15px; align-items: center;">
+      <span class="admin-badge">Administrator</span>
+      <button id="adminLogout" class="btn-danger">Logout</button>
+    </div>
+  </header>
+
+  <!-- Admin Container -->
+  <div class="admin-container">
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>Total Clinics</h3>
+        <div class="stat-value" id="totalClinics">0</div>
+        <div class="stat-label">Registered clinics</div>
+      </div>
+      <div class="stat-card">
+        <h3>Total Patients</h3>
+        <div class="stat-value" id="totalPatients">0</div>
+        <div class="stat-label">Across all clinics</div>
+      </div>
+      <div class="stat-card">
+        <h3>Active Today</h3>
+        <div class="stat-value" id="activeToday">0</div>
+        <div class="stat-label">Appointments today</div>
+      </div>
+      <div class="stat-card">
+        <h3>Total Revenue</h3>
+        <div class="stat-value">₹<span id="totalRevenue">0</span></div>
+        <div class="stat-label">All-time revenue</div>
+      </div>
+    </div>
+
+    <!-- Clinics Section -->
+    <h2 class="section-title">Registered Clinics</h2>
+    <div class="filter-controls">
+      <input type="text" id="searchClinic" placeholder="Search by clinic name or doctor...">
+      <button class="refresh-btn" id="refreshData">
+        <span>🔄</span> Refresh Data
+      </button>
+    </div>
+
+    <div class="clinics-table-container">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Clinic ID</th>
+            <th>Doctor Name</th>
+            <th>Clinic Name</th>
+            <th>Email</th>
+            <th>WhatsApp</th>
+            <th>Patients</th>
+            <th>Revenue</th>
+            <th>Registered</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="clinicsTableBody">
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 40px;">Loading clinics...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Recent Activity Section -->
+    <h2 class="section-title">Recent Activity</h2>
+    <div class="clinics-table-container">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Clinic</th>
+            <th>Patient Name</th>
+            <th>Service</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="recentActivityBody">
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 40px;">Loading activity...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const apiBase = 'https://clinics-crm.onrender.com';
+    
+    // Check admin authentication
+    const adminToken = localStorage.getItem('adminAuth');
+    if (!adminToken) {
+      window.location.href = 'admin.html';
+    }
+
+    let clinicsData = [];
+    let patientsData = [];
+
+    // Fetch all data
+    async function fetchAdminData() {
+      try {
+        const [clinicsRes, patientsRes] = await Promise.all([
+          fetch(`${apiBase}/api/admin/clinics`, {
+            headers: { 'Authorization': `Bearer ${adminToken}` }
+          }),
+          fetch(`${apiBase}/api/admin/all-patients`, {
+            headers: { 'Authorization': `Bearer ${adminToken}` }
+          })
+        ]);
+
+        if (!clinicsRes.ok || !patientsRes.ok) {
+          throw new Error('Failed to fetch data');
+        }
+
+        clinicsData = await clinicsRes.json();
+        patientsData = await patientsRes.json();
+
+        updateStatistics();
+        renderClinicsTable();
+        renderRecentActivity();
+      } catch (error) {
+        console.error('Error fetching admin data:', error);
+        alert('Failed to load admin data. Please try again.');
+      }
+    }
+
+    // Update statistics
+    function updateStatistics() {
+      document.getElementById('totalClinics').innerText = clinicsData.length;
+      document.getElementById('totalPatients').innerText = patientsData.length;
+
+      // Today's appointments
+      const today = new Date().toISOString().split('T')[0];
+      const todayAppointments = patientsData.filter(p => p.date === today);
+      document.getElementById('activeToday').innerText = todayAppointments.length;
+
+      // Total revenue
+      const totalRevenue = patientsData.reduce((sum, p) => sum + (p.price || 0), 0);
+      document.getElementById('totalRevenue').innerText = totalRevenue.toLocaleString();
+    }
+
+    // Render clinics table
+    function renderClinicsTable(filterText = '') {
+      const tbody = document.getElementById('clinicsTableBody');
+      
+      const filtered = clinicsData.filter(clinic => {
+        if (!filterText) return true;
+        const search = filterText.toLowerCase();
+        return (
+          clinic.clinic_name?.toLowerCase().includes(search) ||
+          clinic.dr_name?.toLowerCase().includes(search) ||
+          clinic.email?.toLowerCase().includes(search)
+        );
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">No clinics found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(clinic => {
+        const clinicPatients = patientsData.filter(p => p.clinicId === clinic.clinicId);
+        const clinicRevenue = clinicPatients.reduce((sum, p) => sum + (p.price || 0), 0);
+        const registeredDate = new Date(clinic.createdAt).toLocaleDateString();
+
+        return `
+          <tr>
+            <td><strong>${clinic.clinicId}</strong></td>
+            <td>${clinic.dr_name || 'N/A'}</td>
+            <td>${clinic.clinic_name || 'N/A'}</td>
+            <td>${clinic.email || 'N/A'}</td>
+            <td>${clinic.whatsapp_business_number || 'N/A'}</td>
+            <td><strong>${clinicPatients.length}</strong></td>
+            <td>₹${clinicRevenue.toLocaleString()}</td>
+            <td>${registeredDate}</td>
+            <td>
+              <button class="view-btn" onclick="viewClinicDetails('${clinic.clinicId}')">
+                View Details
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Render recent activity
+    function renderRecentActivity() {
+      const tbody = document.getElementById('recentActivityBody');
+      
+      // Sort patients by date (most recent first)
+      const recentPatients = [...patientsData]
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 20);
+
+      if (recentPatients.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">No recent activity</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = recentPatients.map(patient => {
+        const clinic = clinicsData.find(c => c.clinicId === patient.clinicId);
+        const statusClass = patient.status === 'Complete' ? 'Complete' : 
+                          patient.status === 'Cancelled' ? 'Cancelled' : 'Pending';
+        
+        return `
+          <tr>
+            <td>${clinic?.clinic_name || patient.clinicId}</td>
+            <td>${patient.name}</td>
+            <td>${patient.service}</td>
+            <td>₹${patient.price || 0}</td>
+            <td><span class="status ${statusClass}">${patient.status || 'Pending'}</span></td>
+            <td>${new Date(patient.date).toLocaleDateString()}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // View clinic details
+    function viewClinicDetails(clinicId) {
+      const clinic = clinicsData.find(c => c.clinicId === clinicId);
+      const clinicPatients = patientsData.filter(p => p.clinicId === clinicId);
+      
+      alert(`Clinic: ${clinic.clinic_name}\nDoctor: ${clinic.dr_name}\nTotal Patients: ${clinicPatients.length}\nEmail: ${clinic.email}\nWhatsApp: ${clinic.whatsapp_business_number}`);
+    }
+
+    // Search functionality
+    document.getElementById('searchClinic').addEventListener('input', (e) => {
+      renderClinicsTable(e.target.value);
+    });
+
+    // Refresh data
+    document.getElementById('refreshData').addEventListener('click', () => {
+      fetchAdminData();
+    });
+
+    // Logout
+    document.getElementById('adminLogout').addEventListener('click', () => {
+      localStorage.removeItem('adminAuth');
+      window.location.href = 'admin.html';
+    });
+
+    // Initial load
+    fetchAdminData();
+  </script>
+</body>
+</html>

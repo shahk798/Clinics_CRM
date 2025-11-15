@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - Lumonex Agency</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .admin-login-container {
+      width: 90%;
+      max-width: 400px;
+      margin: 80px auto;
+      padding: 40px 30px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 20px;
+      text-align: center;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 15px 50px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+
+    .admin-login-container h2 {
+      margin-bottom: 10px;
+      font-size: 28px;
+      color: #fff;
+    }
+
+    .admin-login-container p {
+      margin-bottom: 25px;
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+    }
+
+    .admin-login-container input {
+      width: 100%;
+      padding: 14px 16px;
+      margin: 10px 0;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      font-size: 15px;
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+    }
+
+    .admin-login-container input:focus {
+      outline: none;
+      border-color: rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.2);
+    }
+
+    .admin-login-container input::placeholder {
+      color: rgba(255,255,255,0.6);
+    }
+
+    #admin-error {
+      color: #ef4444;
+      margin-top: 15px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .admin-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-login-container">
+    <div class="admin-icon">🔐</div>
+    <h2>Admin Access</h2>
+    <p>Authorized Personnel Only</p>
+    <form id="adminLoginForm">
+      <input type="password" id="adminPassword" placeholder="Admin Password" required>
+      <button type="submit" class="btn-primary">Access Dashboard</button>
+      <p id="admin-error"></p>
+    </form>
+  </div>
+
+  <script>
+    const adminLoginForm = document.getElementById('adminLoginForm');
+    const adminError = document.getElementById('admin-error');
+
+    adminLoginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = document.getElementById('adminPassword').value;
+
+      try {
+        const res = await fetch('https://clinics-crm.onrender.com/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          localStorage.setItem('adminAuth', data.token);
+          window.location.href = 'admin-dashboard.html';
+        } else {
+          adminError.innerText = data.message || 'Invalid password';
+        }
+      } catch (error) {
+        adminError.innerText = 'Server connection error';
+      }
+    });
+  </script>
+</body>
+</html>

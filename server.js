@@ -211,6 +211,10 @@ app.delete('/api/patients/:id', async (req, res) => {
   }
 });
 
+// Admin routes
+const adminRoutes = require('./routes/admin');
+app.use('/api/admin', adminRoutes);
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
