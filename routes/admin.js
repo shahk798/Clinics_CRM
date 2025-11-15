@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 const Patient = mongoose.model('Patient');
 
 // Admin password
-const ADMIN_PASSWORD = 'admin1234';
+const ADMIN_PASSWORD = 'Lum005';
 
 // Simple token generation (in production, use JWT)
 function generateToken() {
