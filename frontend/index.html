@@ -3,30 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lumonex Agency - Login</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Lumonex Agency - Welcome</title>
+  <script>
+    // Redirect to signup page
+    window.location.href = "signup.html";
+  </script>
 </head>
 <body>
-  <div class="login-container">
-    <h2>Login to Your Clinic</h2>
-    <form id="loginForm">
-      <input type="text" id="clinicId" placeholder="Clinic ID" required>
-      <input type="text" id="username" placeholder="Username" required>
-      <input type="password" id="password" placeholder="Password" required>
-      <button type="submit" class="btn-primary">Login</button>
-      <p id="error-message"></p>
-    </form>
-    <button id="resetPassword" class="btn-secondary">Forgot Password?</button>
-  </div>
-
-  <script>
-    // Fetch default clinic ID from backend
-    fetch("https://clinics-crm.onrender.com/api/clinic-config")
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById("clinicId").value = data.clinicId || "";
-      })
-      .catch(err => console.error("Failed to fetch clinic config", err));
+  <p>Redirecting to signup page...</p>
+</body>
+</html>
 
     const loginForm = document.getElementById("loginForm");
     loginForm.addEventListener("submit", async (e) => {
