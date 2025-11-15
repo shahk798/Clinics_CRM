@@ -1,6 +1,6 @@
 // Client-side script for dashboard UI
 document.addEventListener('DOMContentLoaded', () => {
-  const apiBase = 'http://localhost:5000'; // local backend
+  const apiBase = 'https://clinics-crm.onrender.com'; // production backend
   const clinicId = localStorage.getItem('clinicId');
   if (!clinicId) return window.location.href = '/frontend/login.html';
 
