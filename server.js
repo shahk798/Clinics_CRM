@@ -65,7 +65,7 @@ const patientSchema = new mongoose.Schema({
 const Patient = mongoose.model('Patient', patientSchema);
 
 // Admin routes - loaded after Patient model is defined
-const adminRoutes = require('./routes/admin');
+const adminRoutes = require('./routes/admin')(Patient);
 app.use('/api/admin', adminRoutes);
 
 // Auto-create clinic from .env if it doesn't exist (defined here but only called after DB connect)

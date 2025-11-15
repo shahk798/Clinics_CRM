@@ -1,10 +1,5 @@
 const express = require('express');
-const router = express.Router();
 const Clinic = require('../models/Clinic');
-const mongoose = require('mongoose');
-
-// Get Patient model from mongoose (it's defined in server.js)
-const Patient = mongoose.model('Patient');
 
 // Admin password
 const ADMIN_PASSWORD = 'Lum005';
@@ -14,8 +9,12 @@ function generateToken() {
   return Buffer.from(`admin:${Date.now()}`).toString('base64');
 }
 
-// Admin login
-router.post('/login', async (req, res) => {
+// Export a function that takes Patient model
+module.exports = function(Patient) {
+  const router = express.Router();
+
+  // Admin login
+  router.post('/login', async (req, res) => {
   try {
     const { password } = req.body;
 
@@ -134,4 +133,5 @@ router.get('/clinic/:clinicId', verifyAdmin, async (req, res) => {
   }
 });
 
-module.exports = router;
+  return router;
+};
