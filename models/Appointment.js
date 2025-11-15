@@ -6,10 +6,10 @@ const appointmentSchema = new mongoose.Schema({
   phone: String,
   email: String,
   service: String,
-  price: Number,
+  price: { type: Number, default: 0 },
   appointment_date: String,
   appointment_time: String,
-  status: { type: String, default: 'Pending' },
+  status: { type: String, enum: ['pending', 'complete', 'cancel'], default: 'pending' },
   source: { type: String, enum: ['whatsapp', 'dashboard'], default: 'dashboard' }
 }, { 
   collection: 'appointments',

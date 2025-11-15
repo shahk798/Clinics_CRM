@@ -5,9 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lumonex Agency - Dashboard</title>
   <link rel="stylesheet" href="style.css">
-  <!-- jsPDF and AutoTable -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <!-- SheetJS for Excel generation -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <!-- Header -->
@@ -17,7 +16,9 @@
       <h3 class="clinic-name">Your Clinic Dashboard</h3>
     </div>
     <div class="header-right">
-      <button id="reportBtn" class="btn-primary">Generate Report</button>
+      <button id="summaryReportBtn" class="btn-primary">Summary Report</button>
+      <button id="patientListBtn" class="btn-primary">Patient List</button>
+      <button id="reportBtn" class="btn-primary">Full Report</button>
       <button id="logoutBtn" class="btn-danger">Logout</button>
     </div>
   </header>

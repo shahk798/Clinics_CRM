@@ -4,20 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lumonex Agency - Dashboard</title>
-  <link rel="stylesheet" href="style.css">
-  <!-- jsPDF and AutoTable -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <link rel="stylesheet" href="/frontend/style.css">
+  <!-- SheetJS for Excel generation -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, rgba(30, 58, 138, 0.85), rgba(59, 130, 246, 0.85)), url('https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=1920&q=80');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+  </style>
 </head>
 <body>
   <!-- Header -->
   <header class="header">
     <div>
       <h1 class="agency-name">Lumonex Agency</h1>
-      <h3 class="clinic-name">Your Clinic Dashboard</h3>
+    </div>
+    <div class="header-center">
+      <h2>Your Clinic Dashboard</h2>
     </div>
     <div class="header-right">
-      <button id="reportBtn" class="btn-primary">Generate Report</button>
+      <button id="summaryReportBtn" class="btn-primary">Summary Report</button>
+      <button id="patientListBtn" class="btn-primary">Patient List</button>
+      <button id="reportBtn" class="btn-primary">Full Report</button>
       <button id="logoutBtn" class="btn-danger">Logout</button>
     </div>
   </header>
@@ -63,18 +74,20 @@
     <div class="modal-content">
       <h3 id="modalTitle">Add Patient</h3>
       <form id="patientForm">
-        <input type="text" id="pName" placeholder="Full Name" required>
-        <input type="text" id="pPhone" placeholder="Phone" required>
-        <input type="email" id="pEmail" placeholder="Email" required>
-        <input type="text" id="pService" placeholder="Service" required>
-        <input type="number" id="pPrice" placeholder="Price (₹)" required>
-        <input type="date" id="pDate" required>
-        <input type="time" id="pTime" required>
-        <select id="pStatus" required>
-          <option value="Pending">Pending</option>
-          <option value="Complete">Complete</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
+        <div class="form-grid">
+          <input type="text" id="pName" placeholder="Full Name" required>
+          <input type="text" id="pPhone" placeholder="Phone" required>
+          <input type="email" id="pEmail" placeholder="Email" required>
+          <input type="text" id="pService" placeholder="Service" required>
+          <input type="number" id="pPrice" placeholder="Price (₹)" required>
+          <input type="date" id="pDate" required>
+          <input type="time" id="pTime" required>
+          <select id="pStatus" required>
+            <option value="Pending">Pending</option>
+            <option value="Complete">Complete</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
         <div class="modal-actions">
           <button type="submit" id="savePatientBtn" class="btn-primary">Save</button>
           <button type="button" id="closeModal" class="btn-secondary">Cancel</button>

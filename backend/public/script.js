@@ -275,20 +275,200 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = "login.html";
   });
 
-  // Generate PDF report
-  document.getElementById("reportBtn").addEventListener("click", () => {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+  // Generate Summary Report (Excel)
+  document.getElementById("summaryReportBtn").addEventListener("click", () => {
+    const totalPatients = patients.length;
+    const completed = patients.filter(p => p.status === "Complete").length;
+    const pending = patients.filter(p => p.status === "Pending").length;
+    const cancelled = patients.filter(p => p.status === "Cancelled").length;
+    const totalRevenue = patients.reduce((sum, p) => p.status === "Complete" ? sum + Number(p.price) : sum, 0);
+    const pendingRevenue = patients.reduce((sum, p) => p.status === "Pending" ? sum + Number(p.price) : sum, 0);
 
-    const tableData = patients.map(p => [
-      p.name, p.phone, p.email, p.service, `₹${p.price}`, p.date, p.time, p.status
-    ]);
+    // Create summary data
+    const summaryData = [
+      ['Clinic Summary Report', ''],
+      ['Generated On:', new Date().toLocaleString()],
+      ['Clinic ID:', clinicId],
+      ['', ''],
+      ['Metric', 'Value'],
+      ['Total Patients', totalPatients],
+      ['Completed Appointments', completed],
+      ['Pending Appointments', pending],
+      ['Cancelled Appointments', cancelled],
+      ['Total Revenue (Completed)', `₹${totalRevenue}`],
+      ['Potential Revenue (Pending)', `₹${pendingRevenue}`],
+      ['Total Potential Revenue', `₹${totalRevenue + pendingRevenue}`]
+    ];
 
-    doc.autoTable({
-      head: [['Name', 'Phone', 'Email', 'Service', 'Price', 'Date', 'Time', 'Status']],
-      body: tableData
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(summaryData);
+
+    // Set column widths
+    ws['!cols'] = [{ wch: 30 }, { wch: 20 }];
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Summary');
+
+    // Save file
+    XLSX.writeFile(wb, `clinic_${clinicId}_summary_${new Date().toISOString().split('T')[0]}.xlsx`);
+  });
+
+  // Generate Patient List Report (Excel)
+  document.getElementById("patientListBtn").addEventListener("click", () => {
+    // Create patient list data
+    const patientListData = [
+      ['Patient Information List'],
+      ['Generated On:', new Date().toLocaleString()],
+      ['Clinic ID:', clinicId],
+      [''],
+      ['Name', 'Phone', 'Email', 'Service', 'Price', 'Date', 'Time', 'Status']
+    ];
+
+    patients.forEach(p => {
+      patientListData.push([
+        p.name,
+        p.phone,
+        p.email,
+        p.service,
+        p.price,
+        p.date,
+        p.time,
+        p.status
+      ]);
     });
 
-    doc.save(`clinic_${clinicId}_report.pdf`);
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(patientListData);
+
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 20 }, // Name
+      { wch: 15 }, // Phone
+      { wch: 25 }, // Email
+      { wch: 20 }, // Service
+      { wch: 10 }, // Price
+      { wch: 12 }, // Date
+      { wch: 10 }, // Time
+      { wch: 12 }  // Status
+    ];
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Patient List');
+
+    // Save file
+    XLSX.writeFile(wb, `clinic_${clinicId}_patients_${new Date().toISOString().split('T')[0]}.xlsx`);
+  });
+
+  // Generate Full Report (Excel) - with multiple sheets
+  document.getElementById("reportBtn").addEventListener("click", () => {
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: Summary
+    const totalPatients = patients.length;
+    const completed = patients.filter(p => p.status === "Complete").length;
+    const pending = patients.filter(p => p.status === "Pending").length;
+    const cancelled = patients.filter(p => p.status === "Cancelled").length;
+    const totalRevenue = patients.reduce((sum, p) => p.status === "Complete" ? sum + Number(p.price) : sum, 0);
+    const pendingRevenue = patients.reduce((sum, p) => p.status === "Pending" ? sum + Number(p.price) : sum, 0);
+
+    const summaryData = [
+      ['Clinic Full Report', ''],
+      ['Generated On:', new Date().toLocaleString()],
+      ['Clinic ID:', clinicId],
+      ['', ''],
+      ['Metric', 'Value'],
+      ['Total Patients', totalPatients],
+      ['Completed Appointments', completed],
+      ['Pending Appointments', pending],
+      ['Cancelled Appointments', cancelled],
+      ['Total Revenue (Completed)', `₹${totalRevenue}`],
+      ['Potential Revenue (Pending)', `₹${pendingRevenue}`],
+      ['Total Potential Revenue', `₹${totalRevenue + pendingRevenue}`]
+    ];
+
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    wsSummary['!cols'] = [{ wch: 30 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+    // Sheet 2: All Patients
+    const allPatientsData = [
+      ['Name', 'Phone', 'Email', 'Service', 'Price', 'Date', 'Time', 'Status']
+    ];
+
+    patients.forEach(p => {
+      allPatientsData.push([
+        p.name,
+        p.phone,
+        p.email,
+        p.service,
+        p.price,
+        p.date,
+        p.time,
+        p.status
+      ]);
+    });
+
+    const wsAllPatients = XLSX.utils.aoa_to_sheet(allPatientsData);
+    wsAllPatients['!cols'] = [
+      { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 20 },
+      { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 12 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsAllPatients, 'All Patients');
+
+    // Sheet 3: Completed Appointments
+    const completedData = [
+      ['Completed Appointments'],
+      ['Name', 'Phone', 'Email', 'Service', 'Price', 'Date', 'Time']
+    ];
+
+    patients.filter(p => p.status === "Complete").forEach(p => {
+      completedData.push([p.name, p.phone, p.email, p.service, p.price, p.date, p.time]);
+    });
+
+    const wsCompleted = XLSX.utils.aoa_to_sheet(completedData);
+    wsCompleted['!cols'] = [
+      { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 20 },
+      { wch: 10 }, { wch: 12 }, { wch: 10 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsCompleted, 'Completed');
+
+    // Sheet 4: Pending Appointments
+    const pendingData = [
+      ['Pending Appointments'],
+      ['Name', 'Phone', 'Email', 'Service', 'Price', 'Date', 'Time']
+    ];
+
+    patients.filter(p => p.status === "Pending").forEach(p => {
+      pendingData.push([p.name, p.phone, p.email, p.service, p.price, p.date, p.time]);
+    });
+
+    const wsPending = XLSX.utils.aoa_to_sheet(pendingData);
+    wsPending['!cols'] = [
+      { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 20 },
+      { wch: 10 }, { wch: 12 }, { wch: 10 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsPending, 'Pending');
+
+    // Sheet 5: Cancelled Appointments
+    const cancelledData = [
+      ['Cancelled Appointments'],
+      ['Name', 'Phone', 'Email', 'Service', 'Price', 'Date', 'Time']
+    ];
+
+    patients.filter(p => p.status === "Cancelled").forEach(p => {
+      cancelledData.push([p.name, p.phone, p.email, p.service, p.price, p.date, p.time]);
+    });
+
+    const wsCancelled = XLSX.utils.aoa_to_sheet(cancelledData);
+    wsCancelled['!cols'] = [
+      { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 20 },
+      { wch: 10 }, { wch: 12 }, { wch: 10 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsCancelled, 'Cancelled');
+
+    // Save file
+    XLSX.writeFile(wb, `clinic_${clinicId}_full_report_${new Date().toISOString().split('T')[0]}.xlsx`);
   });
 });

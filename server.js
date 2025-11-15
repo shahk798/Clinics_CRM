@@ -15,10 +15,11 @@ const path = require('path');
 
 // Serve frontend static files
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/frontend', express.static(path.join(__dirname, 'frontend')));
 
 // Redirect root to login page
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/login.html'));
+  res.sendFile(path.join(__dirname, 'frontend/login.html'));
 });
 
 // Expose a small clinic config endpoint used by the frontend
@@ -45,6 +46,9 @@ if (!mongoUri) {
   .catch(err => console.error("❌ MongoDB Connection Error:", err));
 }
 
+// Import Models
+const Clinic = require('./models/Clinic');
+
 // Schemas
 const patientSchema = new mongoose.Schema({
   clinicId: { type: String, required: true },
@@ -58,14 +62,7 @@ const patientSchema = new mongoose.Schema({
   status: String
 });
 
-const userSchema = new mongoose.Schema({
-  clinicId: { type: String, required: true },
-  username: { type: String, required: true },
-  password: { type: String, required: true }
-});
-
 const Patient = mongoose.model('Patient', patientSchema);
-const User = mongoose.model('User', userSchema);
 
 // Auto-create clinic from .env if it doesn't exist (defined here but only called after DB connect)
 async function createClinic() {
@@ -73,9 +70,17 @@ async function createClinic() {
   if (!CLINIC_ID || !USERNAME || !PASSWORD) return;
 
   try {
-    const existing = await User.findOne({ clinicId: CLINIC_ID });
+    const existing = await Clinic.findOne({ clinicId: CLINIC_ID });
     if (!existing) {
-      const clinic = new User({ clinicId: CLINIC_ID, username: USERNAME, password: PASSWORD });
+      const clinic = new Clinic({ 
+        clinicId: CLINIC_ID, 
+        username: USERNAME, 
+        password: PASSWORD,
+        dr_name: 'Admin',
+        clinic_name: 'Default Clinic',
+        email: 'admin@clinic.com',
+        whatsapp_business_number: '0000000000'
+      });
       await clinic.save();
       console.log(`✅ Clinic created: ${CLINIC_ID}`);
     } else {
@@ -88,13 +93,67 @@ async function createClinic() {
 
 // Routes
 
+// Auth signup
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { 
+      dr_name, 
+      clinic_name, 
+      contact_number, 
+      whatsapp_business_number, 
+      email, 
+      username, 
+      clinicId, 
+      password 
+    } = req.body;
+
+    // Check if clinic already exists
+    const existingClinic = await Clinic.findOne({ 
+      $or: [{ username }, { clinicId }, { email }] 
+    });
+
+    if (existingClinic) {
+      return res.status(400).json({ 
+        message: 'A clinic with this username, email, or ID already exists' 
+      });
+    }
+
+    // Create new clinic
+    const newClinic = new Clinic({
+      clinicId,
+      dr_name,
+      clinic_name,
+      contact_number,
+      whatsapp_business_number,
+      email,
+      username,
+      password
+    });
+
+    await newClinic.save();
+
+    res.status(201).json({ 
+      message: 'Clinic registered successfully',
+      clinicId: newClinic.clinicId 
+    });
+  } catch (err) {
+    console.error('Signup error:', err);
+    res.status(500).json({ message: 'Server error during registration' });
+  }
+});
+
 // Auth login
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username, password });
-    if (user) {
-      res.json({ clinicId: user.clinicId });
+    const { clinicId, username, password } = req.body;
+    const clinic = await Clinic.findOne({ clinicId, username, password });
+    if (clinic) {
+      res.json({ 
+        clinicId: clinic.clinicId,
+        name: clinic.clinic_name,
+        dr_name: clinic.dr_name,
+        email: clinic.email
+      });
     } else {
       res.status(401).json({ message: 'Invalid credentials' });
     }

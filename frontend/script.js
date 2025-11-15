@@ -1,8 +1,8 @@
 // Client-side script for dashboard UI
 document.addEventListener('DOMContentLoaded', () => {
-  const apiBase = 'https://clinics-crm.onrender.com'; // backend (Render)
+  const apiBase = 'http://localhost:5000'; // local backend
   const clinicId = localStorage.getItem('clinicId');
-  if (!clinicId) return window.location.href = 'login.html';
+  if (!clinicId) return window.location.href = '/frontend/login.html';
 
   // Elements
   const patientTableBody = document.querySelector('#patientTable tbody');
@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeModal = document.getElementById('closeModal');
   const closeProfile = document.getElementById('closeProfile');
   const reportBtn = document.getElementById('reportBtn');
+  const summaryReportBtn = document.getElementById('summaryReportBtn');
+  const patientListBtn = document.getElementById('patientListBtn');
   const logoutBtn = document.getElementById('logoutBtn');
   const searchInput = document.getElementById('searchInput');
 
@@ -27,13 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       console.log('Fetching appointments for clinicId:', clinicId);
       console.log('API URL:', `${apiBase}/api/patients?clinicId=${encodeURIComponent(clinicId)}`);
-      
-      // First try the debug endpoint to see all appointments
-      const debugRes = await fetch(`${apiBase}/api/debug/appointments`);
-      const debugData = await debugRes.json();
-      console.log('Debug - All appointments in DB:', debugData);
 
-      // Now fetch filtered appointments for this clinic
+      // Fetch filtered appointments for this clinic
       const res = await fetch(`${apiBase}/api/patients?clinicId=${encodeURIComponent(clinicId)}`);
       if (!res.ok) {
         const error = await res.text();
@@ -127,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
     editingId = null;
     modalTitle.innerText = 'Add Patient';
     patientForm.reset();
-    patientModal.style.display = 'block';
+    patientModal.style.display = 'flex';
   });
 
   closeModal.addEventListener('click', () => patientModal.style.display = 'none');
@@ -204,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('pDate').value = patient.date || patient.appointment_date || '';
       document.getElementById('pTime').value = patient.time || patient.appointment_time || '';
       document.getElementById('pStatus').value = patient.status || 'Pending';
-      patientModal.style.display = 'block';
+      patientModal.style.display = 'flex';
     } else if (action === 'delete') {
       if (!confirm('Delete this patient?')) return;
       try {
@@ -218,15 +215,183 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Generate PDF report
+  // Generate Summary Report (Excel)
+  summaryReportBtn.addEventListener('click', () => {
+    const totalPatients = patients.length;
+    const completed = patients.filter(p => p.status === "Complete").length;
+    const pending = patients.filter(p => p.status === "Pending").length;
+    const cancelled = patients.filter(p => p.status === "Cancelled").length;
+    const totalRevenue = patients.reduce((sum, p) => p.status === "Complete" ? sum + Number(p.price || 0) : sum, 0);
+    const pendingRevenue = patients.reduce((sum, p) => p.status === "Pending" ? sum + Number(p.price || 0) : sum, 0);
+
+    const summaryData = [
+      ['Clinic Summary Report', ''],
+      ['Generated On:', new Date().toLocaleString()],
+      ['Clinic ID:', clinicId],
+      ['', ''],
+      ['Metric', 'Value'],
+      ['Total Patients', totalPatients],
+      ['Completed Appointments', completed],
+      ['Pending Appointments', pending],
+      ['Cancelled Appointments', cancelled],
+      ['Total Revenue (Completed)', `₹${totalRevenue}`],
+      ['Potential Revenue (Pending)', `₹${pendingRevenue}`],
+      ['Total Potential Revenue', `₹${totalRevenue + pendingRevenue}`]
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(summaryData);
+    ws['!cols'] = [{ wch: 30 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Summary');
+    XLSX.writeFile(wb, `clinic_${clinicId}_summary_${new Date().toISOString().split('T')[0]}.xlsx`);
+  });
+
+  // Generate Patient List Report (Excel)
+  patientListBtn.addEventListener('click', () => {
+    const patientListData = [
+      ['Patient Information List'],
+      ['Generated On:', new Date().toLocaleString()],
+      ['Clinic ID:', clinicId],
+      [''],
+      ['Name', 'Phone', 'Email', 'Service', 'Price', 'Date', 'Time', 'Status']
+    ];
+
+    patients.forEach(p => {
+      patientListData.push([
+        p.name || p.patient_name,
+        p.phone,
+        p.email,
+        p.service,
+        p.price || 0,
+        p.date || p.appointment_date,
+        p.time || p.appointment_time,
+        p.status
+      ]);
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(patientListData);
+    ws['!cols'] = [
+      { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 20 },
+      { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 12 }
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, 'Patient List');
+    XLSX.writeFile(wb, `clinic_${clinicId}_patients_${new Date().toISOString().split('T')[0]}.xlsx`);
+  });
+
+  // Generate Full Report (Excel)
   reportBtn.addEventListener('click', () => {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const columns = ['Name','Phone','Email','Service','Price','Date','Time','Status'];
-    const rows = patients.map(p => [p.patient_name, p.phone, p.email, p.service, p.price, p.appointment_date, p.appointment_time, p.status]);
-    doc.text('Patients Report', 14, 16);
-    doc.autoTable({ head: [columns], body: rows, startY: 20 });
-    doc.save(`patients_report_${clinicId}.pdf`);
+    const wb = XLSX.utils.book_new();
+
+    // Summary Sheet
+    const totalPatients = patients.length;
+    const completed = patients.filter(p => p.status === "Complete").length;
+    const pending = patients.filter(p => p.status === "Pending").length;
+    const cancelled = patients.filter(p => p.status === "Cancelled").length;
+    const totalRevenue = patients.reduce((sum, p) => p.status === "Complete" ? sum + Number(p.price || 0) : sum, 0);
+    const pendingRevenue = patients.reduce((sum, p) => p.status === "Pending" ? sum + Number(p.price || 0) : sum, 0);
+
+    const summaryData = [
+      ['Clinic Full Report', ''],
+      ['Generated On:', new Date().toLocaleString()],
+      ['Clinic ID:', clinicId],
+      ['', ''],
+      ['Metric', 'Value'],
+      ['Total Patients', totalPatients],
+      ['Completed Appointments', completed],
+      ['Pending Appointments', pending],
+      ['Cancelled Appointments', cancelled],
+      ['Total Revenue (Completed)', `₹${totalRevenue}`],
+      ['Potential Revenue (Pending)', `₹${pendingRevenue}`],
+      ['Total Potential Revenue', `₹${totalRevenue + pendingRevenue}`]
+    ];
+
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    wsSummary['!cols'] = [{ wch: 30 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+    // All Patients Sheet
+    const allPatientsData = [
+      ['Name', 'Phone', 'Email', 'Service', 'Price', 'Date', 'Time', 'Status']
+    ];
+    patients.forEach(p => {
+      allPatientsData.push([
+        p.name || p.patient_name,
+        p.phone,
+        p.email,
+        p.service,
+        p.price || 0,
+        p.date || p.appointment_date,
+        p.time || p.appointment_time,
+        p.status
+      ]);
+    });
+
+    const wsAllPatients = XLSX.utils.aoa_to_sheet(allPatientsData);
+    wsAllPatients['!cols'] = [
+      { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 20 },
+      { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 12 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsAllPatients, 'All Patients');
+
+    // Completed Sheet
+    const completedData = [
+      ['Completed Appointments'],
+      ['Name', 'Phone', 'Email', 'Service', 'Price', 'Date', 'Time']
+    ];
+    patients.filter(p => p.status === "Complete").forEach(p => {
+      completedData.push([
+        p.name || p.patient_name, p.phone, p.email, p.service,
+        p.price || 0, p.date || p.appointment_date, p.time || p.appointment_time
+      ]);
+    });
+
+    const wsCompleted = XLSX.utils.aoa_to_sheet(completedData);
+    wsCompleted['!cols'] = [
+      { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 20 },
+      { wch: 10 }, { wch: 12 }, { wch: 10 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsCompleted, 'Completed');
+
+    // Pending Sheet
+    const pendingData = [
+      ['Pending Appointments'],
+      ['Name', 'Phone', 'Email', 'Service', 'Price', 'Date', 'Time']
+    ];
+    patients.filter(p => p.status === "Pending").forEach(p => {
+      pendingData.push([
+        p.name || p.patient_name, p.phone, p.email, p.service,
+        p.price || 0, p.date || p.appointment_date, p.time || p.appointment_time
+      ]);
+    });
+
+    const wsPending = XLSX.utils.aoa_to_sheet(pendingData);
+    wsPending['!cols'] = [
+      { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 20 },
+      { wch: 10 }, { wch: 12 }, { wch: 10 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsPending, 'Pending');
+
+    // Cancelled Sheet
+    const cancelledData = [
+      ['Cancelled Appointments'],
+      ['Name', 'Phone', 'Email', 'Service', 'Price', 'Date', 'Time']
+    ];
+    patients.filter(p => p.status === "Cancelled").forEach(p => {
+      cancelledData.push([
+        p.name || p.patient_name, p.phone, p.email, p.service,
+        p.price || 0, p.date || p.appointment_date, p.time || p.appointment_time
+      ]);
+    });
+
+    const wsCancelled = XLSX.utils.aoa_to_sheet(cancelledData);
+    wsCancelled['!cols'] = [
+      { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 20 },
+      { wch: 10 }, { wch: 12 }, { wch: 10 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsCancelled, 'Cancelled');
+
+    XLSX.writeFile(wb, `clinic_${clinicId}_full_report_${new Date().toISOString().split('T')[0]}.xlsx`);
   });
 
   // Logout
@@ -234,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.removeItem('loggedIn');
     localStorage.removeItem('clinicId');
     localStorage.removeItem('username');
-    window.location.href = 'index.html';
+    window.location.href = '/frontend/login.html';
   });
 
   // Search

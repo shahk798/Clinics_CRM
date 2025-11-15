@@ -90,6 +90,50 @@ async function createClinic() {
 
 // Routes
 
+// Auth signup
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { 
+      dr_name, 
+      clinic_name, 
+      contact_number, 
+      whatsapp_business_number, 
+      email, 
+      username, 
+      clinicId, 
+      password 
+    } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ 
+      $or: [{ username }, { clinicId }] 
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ 
+        message: 'A clinic with this username or ID already exists' 
+      });
+    }
+
+    // Create new user
+    const newUser = new User({
+      clinicId,
+      username,
+      password
+    });
+
+    await newUser.save();
+
+    res.status(201).json({ 
+      message: 'Clinic registered successfully',
+      clinicId: newUser.clinicId 
+    });
+  } catch (err) {
+    console.error('Signup error:', err);
+    res.status(500).json({ message: 'Server error during registration' });
+  }
+});
+
 // Auth login
 app.post('/api/auth/login', async (req, res) => {
   try {
