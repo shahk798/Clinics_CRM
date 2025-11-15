@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Clinic = require('../models/Clinic');
-const Patient = require('../models/Patient');
+const mongoose = require('mongoose');
+
+// Get Patient model from mongoose (it's defined in server.js)
+const Patient = mongoose.model('Patient');
 
 // Admin password
 const ADMIN_PASSWORD = 'admin1234';
