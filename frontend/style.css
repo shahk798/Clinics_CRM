@@ -168,6 +168,13 @@ header.header {
   border-bottom: 1px solid rgba(255,255,255,0.3);
 }
 
+.dashboard-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
 header .agency-name { 
   margin:0; 
   font-size: 22px; 
@@ -179,11 +186,8 @@ header .agency-name {
   text-align: center;
 }
 
-.header-center h2 {
+.header-center h1 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #fff;
 }
 
 header .clinic-name { 
@@ -354,12 +358,12 @@ tr:hover {
     gap: 15px;
   }
 
-  header .agency-name {
-    font-size: 18px;
+  .dashboard-title {
+    font-size: 16px;
   }
 
-  .header-center h2 {
-    font-size: 20px;
+  header .agency-name {
+    font-size: 18px;
   }
 
   header .clinic-name {
